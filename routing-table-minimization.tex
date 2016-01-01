@@ -1,0 +1,181 @@
+\documentclass[conference]{IEEEtran}
+
+% Document properties
+\title{Order-exploiting routing table minimization for a multicast supercomputer network}
+\author{%
+  \IEEEauthorblockN{Andrew Mundy and Jim Garside}
+  \IEEEauthorblockA{\{\texttt{andrew.mundy}, \texttt{jim.garside}\}\texttt{@manchester.ac.uk}\\
+                    School of Computer Science,\\
+		    University of Manchester,\\
+                    M13 9PL, UK}
+}
+
+% Prettier tables
+\usepackage{booktabs}
+
+% Force float positions in some cases
+\usepackage{float}
+
+% Neaten the fixed-width font
+\usepackage{sourcecodepro}
+\newcommand{\mytt}[1]{\texttt{\footnotesize#1}}
+
+\begin{document}
+  \maketitle
+
+  \begin{abstract}
+    SpiNNaker is a many-core supercomputer designed for the simulation of large neural-networks whose cores communicate by transmitting multicast packets.
+    Routing within SpiNNaker is described by ternary content addressable memories~(TCAM) of quite limited size (each may contain up to 1024 entries).
+    Ensuring that routing tables can be made sufficiently small is necessary to allow some neural-networks to be simulated by the system.
+    We present an algorithm for the minimization of multicast routing tables which exploits the ordered nature of the TCAM.
+    This algorithm is shown to outperform the compression ratio achieved by use of Espresso on a wide sample of routing tables and is shown to fit within the minimal memory available to a SpiNNaker processor.
+  \end{abstract}
+
+  \section{Introduction}
+
+  Each chip in a SpiNNaker system contains a router responsible for transmitting multicast packets to any combination of the six links connecting the chip to its neighbours or the 18 processing cores contained within the chip.
+  The routing descriptions are contained in a 1024-entry ternary content addressable memory (TCAM) and consist of a 32-bit key, a 32-bit mask and a 24-bit route although examples in this paper will use fewer than 32-bits for keys and masks.
+  Each packet contains a 32-bit key which is used to route the packet.
+  On receipt of a packet the router compares the packet key to each of the entries in the routing table contained in the TCAM.
+  The packet \textit{matches} an entry if the packet-key is equivalent to the entry-key once the packet-key has been ANDed with the entry-mask:
+
+  % TODO: Rewrite this as a proper listing in C or Haskell
+  % bool matches(key, entry)
+  % {
+  %   return entry.key & (key & entry.mask);
+  % }
+  % OR
+  % matches :: Word32 -> RoutingTableEntry -> Bool
+  % matches pkey entry = (pkey .&. mask entry) == key entry
+  \noindent\texttt{\small matches = (packet.key \& entry.mask) == entry.key}
+
+  For example, any packets with the keys \mytt{0111} or \mytt{1111} would match the second entry in the table
+
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{c c l}
+      \toprule
+      Key & Mask & Route \\
+      \midrule
+      \texttt{0000} & \texttt{1111} & North East, North \\
+      \texttt{0111} & \texttt{0111} & South \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \noindent as \mytt{0b0111 \& 0b0111 == 0b0111} and \mytt{0b1111 \& 0b0111 == 0b0111}.
+  Hence they would be routed out of the South link, whereas packets with the key \mytt{0000} would instead match only the first entry and would thus be routed out of both the North and North East links.
+
+  \subsection{Notation}
+
+  Any bits where the key and mask of an entry are both \mytt{0} will match either \mytt{0} or \mytt{1} in packet keys and are effectively ``don't cares'' -- written as \mytt{X}.
+  In addition, the routes \{East, North East, North, West, South West, West\} and Cores 0 to 17 can be shortened to \mytt{E}, \mytt{NE}, \mytt{N}, \mytt{W}, \mytt{SW}, \mytt{S} and \mytt{0} to \mytt{17} respectively.
+  In this notation the above routing table is written as:
+
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{c l}
+      \toprule
+      Key-Mask & Route \\
+      \midrule
+      \texttt{0000} & \texttt{NE N}\\
+      \texttt{X111} & \texttt{S}\\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \subsection{Entry priority and default routing}
+
+  In the case that a packet matches multiple routing entries only the entry nearest the top of the table has effect.
+  For example, in the table
+
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{c l}
+      \toprule
+      Key-Mask & Route \\
+      \midrule
+      \texttt{1100} & \texttt{E 3}\\
+      \texttt{110X} & \texttt{17}\\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \noindent any packet with the key \mytt{1100} would match both entries but only the first would have any effect (i.e., the packet would be routed out of the East link and to Core 3).
+  Consequently ``catch all'' rules may be instantiated near the bottom of the table to route packets which do not match any of the entries above them.
+
+  If a packet does not match \textit{any} entry in the routing table then it is routed out of the link opposite to the link through which it arrived at the router (e.g., out of the North link if it arrived on the South link).
+  This behaviour of the router may be considered as being equivalent to there being a large number of implicit entries at the bottom of the routing table.
+
+  \subsection{Merging routing table entries}
+
+  Routing tables can be minimized by merging together entries with equivalent routes.
+  This is done by creating a new key-mask pair with an \mytt{X} in any bit wherever the key-mask pairs of any of the original entries differ or already contained an \mytt{X}.
+  For example, merging the entries:
+
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{c l}
+      \toprule
+      Key-Mask & Route \\
+      \midrule
+      \texttt{0000} & \texttt{N}\\
+      \texttt{0001} & \texttt{N}\\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \noindent would result in the new entry:
+
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{c l}
+      \toprule
+      Key-Mask & Route \\
+      \midrule
+      \texttt{000X} & \texttt{N}\\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \noindent which matches exactly the keys matched by the original entries and no other entries but no more.
+  In contrast, merging the entries \mytt{0001} and \mytt{0010} would result in \mytt{00XX} which would match any packets with the keys \mytt{0000} and \mytt{0011} \textit{in addition} to those matched by the original entries.
+
+  Clearly, care must be taken if tables such as
+
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{c l}
+      \toprule
+      Key-Mask & Route \\
+      \midrule
+      \texttt{0001} & \texttt{N}\\
+      \texttt{0010} & \texttt{N}\\
+      \texttt{0000} & \texttt{SW S}\\
+      \texttt{0011} & \texttt{SW}\\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \noindent are to remain functionally equivalent after minimization.
+
+  \section{Order-exploiting routing table minimization}
+
+  \subsection{Rules of the game}
+
+  \subsection{Avoiding up-aliasing}
+
+  \subsection{Avoiding down-aliasing}
+
+  \subsection{The entire algorithm}
+
+  \section{Results}
+
+  \subsection{Compression ratio}
+
+  \subsection{On-chip performance}
+
+  \section{Discussion}
+
+  \section{Conclusion}
+\end{document}
