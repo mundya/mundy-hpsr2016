@@ -1,0 +1,42 @@
+\documentclass[tikz]{standalone}
+\usepackage{booktabs}
+\usepackage{times}
+\usepackage{sourcecodepro}
+
+\usetikzlibrary{arrows.meta, decorations.pathreplacing, positioning}
+\tikzset{
+  na/.style = {baseline=-.5ex},
+  every picture/.append style={remember picture},
+  every node/.append style={font=\footnotesize},
+}
+
+\begin{document}
+\begin{tikzpicture}
+  % Original table
+  \node (original) {
+    \begin{tabular}{c l}
+      \toprule
+      \texttt{1101} & \texttt{SW 2} \tikz[na]\node [coordinate] (e0) {}; \\
+      \texttt{1110} & \texttt{SW 2} \tikz[na]\node [coordinate] (e1) {}; \\
+      \texttt{XXXX} & \texttt{NE S} \\
+      \bottomrule
+    \end{tabular}
+  };
+
+  % Table after merging
+  \node (invalid) [right=of original] {
+    \begin{tabular}{c l}
+      \toprule
+      \\
+      \tikz[na]\node [coordinate] (e2) {};\texttt{11XX} & \texttt{SW 2} \\
+      \texttt{XXXX} & \texttt{NE S} \\
+      \bottomrule
+    \end{tabular}
+  };
+
+  % Add some arrows
+  \draw [thick, red, decoration={brace}, decorate] ([yshift=+1ex] e0) -- ([yshift=-.5ex] e1)
+    node [midway, coordinate] (merge) {};
+  \draw [thick, red, out=0, in=180, arrows={-Triangle[]}, shorten >=3pt] ([xshift=2pt] merge) to (e2);
+\end{tikzpicture}
+\end{document}
