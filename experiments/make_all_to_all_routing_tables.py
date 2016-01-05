@@ -1,16 +1,18 @@
 """Constructs routing tables for a SpiNNaker 3-board toroid that simulates
 all-to-all connections between cores.
 
-Two sets of routing tables are produced for the same network:
+Three sets of routing tables are produced for the same network:
     * With keys assigned using a Hilbert Curve (this will tend to ensure that
       similar keys originated in physical proximal chips)
     * With keys assigned using the (x, y, p) of each core - a common SpiNNaker
       approach
+    * With keys assigned using the (x, y, z, p) of each core
 
 Routing is performed by the NER algorithm, as implemented in Rig.
 """
 import math
 from rig.netlist import Net
+from rig.geometry import to_xyz, minimise_xyz
 from rig.place_and_route import Cores, Machine
 from rig.place_and_route.place.hilbert import hilbert_chip_order
 from rig.place_and_route.route.ner import route
@@ -43,6 +45,7 @@ def make_routing_tables():
     # Determine how many bits to use in the keys
     x_bits = int(math.ceil(math.log(machine.width, 2)))
     y_bits = int(math.ceil(math.log(machine.height, 2)))
+    z_bits = max(x_bits, y_bits)
     hilbert_bits = int(math.ceil(
         math.log(max(machine.width, machine.height)**2, 2)))
     p_bits = 5
@@ -52,11 +55,16 @@ def make_routing_tables():
     xyp_shift = 32 - xyp_bits
     xyp_mask = ((1 << (xyp_bits)) - 1) << xyp_shift
 
+    xyzp_bits = xyp_bits + z_bits
+    xyzp_shift = 32 - xyzp_bits
+    xyzp_mask = ((1 << (xyzp_bits)) - 1) << xyzp_shift
+
     hilbert_shift = 32 - (hilbert_bits + p_bits)
     hilbert_mask = ((1 << (hilbert_bits + p_bits)) - 1) << hilbert_shift
 
     # Generate the routing keys
     net_keys_xyp = dict()
+    net_keys_xyzp = dict()
     net_keys_hilbert = dict()
     for i, (x, y) in enumerate(chip for chip in hilbert_chip_order(machine) if
                                chip in machine):
@@ -69,6 +77,13 @@ def make_routing_tables():
             xyp_key = ((((x << y_bits) | y) << p_bits) | p) << xyp_shift
             net_keys_xyp[net] = (xyp_key, xyp_mask)
 
+            # Construct the xyzp mask
+            x_, y_, z_ = minimise_xyz(to_xyz((x, y)))
+            z_ = abs(z_)
+            xyzp_key = ((((((x_ << y_bits) | y_) << z_bits) | z_) << p_bits) |
+                        p) << xyzp_shift
+            net_keys_xyzp[net] = (xyzp_key, xyzp_mask)
+
             # Construct the Hilbert key/mask
             hilbert_key = ((i << p_bits) | p) << hilbert_shift
             net_keys_hilbert[net] = (hilbert_key, hilbert_mask)
@@ -77,11 +92,15 @@ def make_routing_tables():
     constraints = list()
     print("Routing...")
     routing_tree = route(vertices_resources, rig_nets, machine, constraints,
-                         placements, allocations)
+                         placements, allocations, radius=0)
 
     print("Constructing routing tables for (x, y, p) keys...")
     routing_tables_xyp = build_routing_tables(
         routing_tree, net_keys_xyp, omit_default_routes=False)
+
+    print("Constructing routing tables for (x, y, z, p) keys...")
+    routing_tables_xyzp = build_routing_tables(
+        routing_tree, net_keys_xyzp, omit_default_routes=False)
 
     print("Constructing routing tables for Hilbert keys...")
     routing_tables_hilbert = build_routing_tables(
@@ -90,6 +109,7 @@ def make_routing_tables():
     # Write the routing tables to file
     print("Writing to file...")
     for tables, desc in ((routing_tables_xyp, "xyp"),
+                         (routing_tables_xyzp, "xyzp"),
                          (routing_tables_hilbert, "hilbert")):
         fn = "uncompressed/all_to_all_{}_{}_{}.bin".format(
                 machine.width, machine.height, desc)
