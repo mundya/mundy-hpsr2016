@@ -1,11 +1,13 @@
 import argparse
 import common
-from multiprocessing import Pool
-from rig.routing_table.ordered_covering import minimise
+from rig.routing_table.ordered_covering import ordered_covering
 from six import iteritems
 
 def my_minimize(chip, table):
-    return chip, minimise(table, None)
+    print("Minimising {}, {} entries...".format(chip, len(table)))
+    table, _ = ordered_covering(table, None)
+    print("... to {} entries".format(len(table)))
+    return chip, table
 
 if __name__ == "__main__":
     # Parse the arguments
@@ -19,8 +21,9 @@ if __name__ == "__main__":
         uncompressed = common.read_routing_tables(f)
 
     print("Minimising routing tables...")
-    p = Pool(4)
-    compressed = dict(p.starmap(my_minimize, iteritems(uncompressed)))
+    compressed = dict(
+        my_minimize(chip, table) for chip, table in iteritems(uncompressed)
+    )
 
     fn = "ordered_covering" + args.routing_table[12:]
     print("Dumping minimised routing tables to {}...".format(fn))

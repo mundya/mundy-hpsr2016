@@ -16,7 +16,7 @@ from rig.geometry import to_xyz, minimise_xyz
 from rig.place_and_route import Cores, Machine
 from rig.place_and_route.place.hilbert import hilbert_chip_order
 from rig.place_and_route.route.ner import route
-from rig.place_and_route.utils import build_routing_tables
+from rig.routing_table import routing_tree_to_tables
 from six import iteritems, itervalues
 
 from common import dump_routing_tables
@@ -94,25 +94,16 @@ def make_routing_tables():
     routing_tree = route(vertices_resources, rig_nets, machine, constraints,
                          placements, allocations, radius=0)
 
-    print("Constructing routing tables for (x, y, p) keys...")
-    routing_tables_xyp = build_routing_tables(
-        routing_tree, net_keys_xyp, omit_default_routes=False)
-
-    print("Constructing routing tables for (x, y, z, p) keys...")
-    routing_tables_xyzp = build_routing_tables(
-        routing_tree, net_keys_xyzp, omit_default_routes=False)
-
-    print("Constructing routing tables for Hilbert keys...")
-    routing_tables_hilbert = build_routing_tables(
-        routing_tree, net_keys_hilbert, omit_default_routes=False)
-
     # Write the routing tables to file
-    print("Writing to file...")
-    for tables, desc in ((routing_tables_xyp, "xyp"),
-                         (routing_tables_xyzp, "xyzp"),
-                         (routing_tables_hilbert, "hilbert")):
+    for keys, desc in ((net_keys_xyp, "xyp"),
+                       (net_keys_xyzp, "xyzp"),
+                       (net_keys_hilbert, "hilbert")):
+        print("Constructing routing tables for {}...".format(desc))
+        tables = routing_tree_to_tables(routing_tree, keys)
+
+        print("Writing to file...")
         fn = "uncompressed/all_to_all_{}_{}_{}.bin".format(
-                machine.width, machine.height, desc)
+            machine.width, machine.height, desc)
         with open(fn, "wb+") as f:
             dump_routing_tables(f, tables)
 
