@@ -30,34 +30,33 @@
   \maketitle
 
   \begin{abstract}
-    SpiNNaker is a many-core supercomputer, designed for the simulation of large neural-networks, whose cores communicate by transmitting multicast packets.
-    Routing within SpiNNaker is described by ternary content addressable memories~(TCAM) of quite limited size (each may contain up to 1024 entries).
-    Ensuring that routing tables can be made sufficiently small is necessary to allow some neural-networks to be simulated by the system.
-    We present an algorithm for the minimization of multicast routing tables which exploits the ordered nature of the TCAM.
-    This algorithm is shown to outperform the compression ratio achieved by use of Espresso on a wide sample of routing tables and is shown to fit within the minimal memory available to a SpiNNaker processor.
+SpiNNaker is a many-core supercomputer, designed for the simulation of large neural-networks; cores communicate with multicast packets.
+Routeing within SpiNNaker is controlled by ternary content addressable memories (TCAM) of quite limited size, efficient use of which allows more flexibility in the neural-networks to be simulated.
+We present an algorithm for the minimization of multicast routeing tables which exploits the ordered nature of the TCAM.
+This algorithm -- which fits in the small, local memory of a SpiNNaker core -- is shown to outperform the compression ratio achieved by use of Espresso on a wide sample of routeing tables.
+
   \end{abstract}
 
   \section{Introduction}
 
-  SpiNNaker [REF] is a purpose-built supercomputer intended to facilitate the simulation of large Spiking Neural Networks.
-  Software models are distributed across a network of processors which communicate by passing (short) messages.
-  Biological neurons in a brain typically have a `fanout' of the order of thousands.
-  SpiNNaker's interconnection structure reflects this in that it supports multicasting packets to an arbitrary set of destinations.
+SpiNNaker [REF] is a purpose-built supercomputer intended to facilitate the simulation of large Spiking Neural Networks.
+Software models are distributed across a network of processors which communicate by passing (short) messages.
+Biological neurons in a brain typically have a `fanout' of the order of thousands; SpiNNaker's interconnection structure reflects this in that it supports multicasting packets to an arbitrary set of destinations.
 
-  Routeing these packets is done by Address Event Representation (AER) [REF]; the packet source is identified and nodes in the network forward and may duplicate packets which they recognise.
-  SpiNNaker comprises custom silicon where each chip has a single router capable of steering packets to or from the 18 on-chip computer cores and inter-chip links.
-  The inter-chip network is intended to be a triangularly connected 2D surface, nominally wrapped into a torus to provide greater aggregate bandwidth
-  This can be drawn as a hexagonal mesh but is sometimes more conveniently pictured skewed into squares.
-  The six inter-chip links are typically labelled with compass points (fig. ???).
+Routeing these packets is done by Address Event Representation (AER)~[REF]; the packet source is identified and routers forward and may duplicate packets which they recognise.
+SpiNNaker comprises custom silicon where each chip has a single router capable of steering packets to or from the 18 on-chip computer cores and inter-chip links.
+The inter-chip network is intended to be a triangularly connected 2D surface, nominally wrapped into a torus to provide greater aggregate bandwidth.
+This can be drawn as a hexagonal mesh but is sometimes more conveniently pictured skewed into squares.
+The six inter-chip links are typically labelled with compass points (fig. ???).
 
-  The routeing key is a 32-bit value which reflects the intended scale of the system: ~$2^16$ chips carry ~$10^6$ processors or ~$10^9$ neurons.
-  Because keying every value on every chip is impractical only selected packets are recognised on a given node.
-  Unrecognised packets are routed in a straight line, e.g. from west to east.
-  Packets are recognised using a Ternary Content Addressable Memory (TCAM) which will bit-mask a key in a programmed way and then look for particular matches
-  This means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \mytt{X}, the last being a `don't care'.
-  The TCAM was chosen with an arbitrary size of 1024 entries, believed large enough for most applications although making entries quite precious.
-  It is prioritised so that only the first-found match will be returned which will generate a 24-bit output bit vector (18 local processors + 6 inter-chip links).
-  However, examples in this paper have been shortened for clarity.
+The routeing key is a 32-bit value which reflects the intended scale of the system: $\sim2^{16}$ chips carry $\sim10^6$ processors or $\sim10^9$ neurons.
+Because keying every value on every chip is impractical only selected packets are recognised on a given node.
+Unrecognised packets are routed in a straight line, e.g.\ from west to east.
+Packets are recognised using a Ternary Content Addressable Memory (TCAM) which will bit-mask a key before looking for particular matches.
+This means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \mytt{X}, the last being a `don't care'.
+The TCAM was chosen with an arbitrary size of 1024 entries, believed large enough for most applications although making entries quite precious.
+It is prioritised so that only the first-found match will be returned which will generate a 24-bit output bit vector (18 local processors + 6 inter-chip links).
+However, examples in this paper have been shortened for clarity.
 
   For example, any packets with the keys \mytt{0111} or \mytt{1111} would match the second entry in the table
 
