@@ -10,7 +10,7 @@ Three sets of routing tables are produced for the same network:
 
 Routing is performed by the NER algorithm, as implemented in Rig.
 """
-import math
+from rig.bitfield import BitField
 from rig.netlist import Net
 from rig.geometry import to_xyz, minimise_xyz
 from rig.place_and_route import Cores, Machine
@@ -43,24 +43,20 @@ def make_routing_tables():
     rig_nets = list(itervalues(nets))  # Just the nets
 
     # Determine how many bits to use in the keys
-    x_bits = int(math.ceil(math.log(machine.width, 2)))
-    y_bits = int(math.ceil(math.log(machine.height, 2)))
-    z_bits = max(x_bits, y_bits)
-    hilbert_bits = int(math.ceil(
-        math.log(max(machine.width, machine.height)**2, 2)))
-    p_bits = 5
+    xyp_fields = BitField(32)
+    xyp_fields.add_field("x", length=8, start_at=24)
+    xyp_fields.add_field("y", length=8, start_at=16)
+    xyp_fields.add_field("p", length=5, start_at=11)
 
-    # Construct the masks
-    xyp_bits = x_bits + y_bits + p_bits
-    xyp_shift = 32 - xyp_bits
-    xyp_mask = ((1 << (xyp_bits)) - 1) << xyp_shift
+    xyzp_fields = BitField(32)
+    xyzp_fields.add_field("x", length=8, start_at=24)
+    xyzp_fields.add_field("y", length=8, start_at=16)
+    xyzp_fields.add_field("z", length=8, start_at=8)
+    xyzp_fields.add_field("p", length=5, start_at=3)
 
-    xyzp_bits = xyp_bits + z_bits
-    xyzp_shift = 32 - xyzp_bits
-    xyzp_mask = ((1 << (xyzp_bits)) - 1) << xyzp_shift
-
-    hilbert_shift = 32 - (hilbert_bits + p_bits)
-    hilbert_mask = ((1 << (hilbert_bits + p_bits)) - 1) << hilbert_shift
+    hilbert_fields = BitField(32)
+    hilbert_fields.add_field("index", length=16, start_at=16)
+    hilbert_fields.add_field("p", length=5, start_at=11)
 
     # Generate the routing keys
     net_keys_xyp = dict()
@@ -74,19 +70,14 @@ def make_routing_tables():
             net = nets[(x, y, p)]
 
             # Construct the xyp key/mask
-            xyp_key = ((((x << y_bits) | y) << p_bits) | p) << xyp_shift
-            net_keys_xyp[net] = (xyp_key, xyp_mask)
+            net_keys_xyp[net] = xyp_fields(x=x, y=y, p=p)
 
             # Construct the xyzp mask
             x_, y_, z_ = minimise_xyz(to_xyz((x, y)))
-            z_ = abs(z_)
-            xyzp_key = ((((((x_ << y_bits) | y_) << z_bits) | z_) << p_bits) |
-                        p) << xyzp_shift
-            net_keys_xyzp[net] = (xyzp_key, xyzp_mask)
+            net_keys_xyzp[net] = xyzp_fields(x=x_, y=y_, z=abs(z_), p=p)
 
             # Construct the Hilbert key/mask
-            hilbert_key = ((i << p_bits) | p) << hilbert_shift
-            net_keys_hilbert[net] = (hilbert_key, hilbert_mask)
+            net_keys_hilbert[net] = hilbert_fields(index=i, p=p)
 
     # Route the network and then generate the routing tables
     constraints = list()
@@ -94,10 +85,19 @@ def make_routing_tables():
     routing_tree = route(vertices_resources, rig_nets, machine, constraints,
                          placements, allocations, radius=0)
 
+    # Assign field widths
+    xyp_fields.assign_fields()
+    xyzp_fields.assign_fields()
+    hilbert_fields.assign_fields()
+
     # Write the routing tables to file
-    for keys, desc in ((net_keys_xyp, "xyp"),
-                       (net_keys_xyzp, "xyzp"),
-                       (net_keys_hilbert, "hilbert")):
+    for fields, desc in ((net_keys_xyp, "xyp"),
+                         (net_keys_xyzp, "xyzp"),
+                         (net_keys_hilbert, "hilbert")):
+        print("Getting keys and masks...")
+        keys = {net: (bf.get_value(), bf.get_mask()) for net, bf in
+                iteritems(fields)}
+
         print("Constructing routing tables for {}...".format(desc))
         tables = routing_tree_to_tables(routing_tree, keys)
 
