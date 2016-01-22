@@ -2,11 +2,14 @@ import argparse
 import common
 from rig.routing_table.ordered_covering import ordered_covering
 from six import iteritems
+import time
 
 def my_minimize(chip, table):
     print("Minimising {}, {} entries...".format(chip, len(table)))
+    t = time.clock()
     table, _ = ordered_covering(table, None)
-    print("... to {} entries".format(len(table)))
+    total = time.clock() - t
+    print("... to {} entries in {} s".format(len(table), total))
     return chip, table
 
 if __name__ == "__main__":
