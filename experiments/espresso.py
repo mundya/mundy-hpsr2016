@@ -1,9 +1,10 @@
 import argparse
 import common
 from collections import defaultdict
-from rig.routing_table import RoutingTableEntry
+from rig.routing_table import RoutingTableEntry, table_is_subset_of
 from six import iteritems
 import subprocess
+import sys
 import tempfile
 
 
@@ -20,16 +21,16 @@ def espresso_to_key_mask(text):
     mask = 0x0
 
     for i, bit in enumerate(text):
-        if bit in {ord('0'), ord('1')}:
+        if bit in "01":
             mask |= (1 << i)
 
-            if bit == ord('1'):
+            if bit == '1':
                 key |= (1 << i)
 
     return key, mask
 
 
-def use_espresso(table):
+def use_espresso(table, provide_offset=True):
     """Call Espresso with appropriate arguments to minimise a routing table."""
     # Begin by breaking entries up into sets of unique routes
     route_entries = defaultdict(set)
@@ -46,16 +47,20 @@ def use_espresso(table):
     # table as the off-set.
     for i, (route, entries) in enumerate(groups):
         with tempfile.NamedTemporaryFile() as f:
-            f.write(b".i 32\n.o 1\n.type fr\n")
+            if provide_offset:
+                f.write(b".i 32\n.o 1\n.type fr\n")
+            else:
+                f.write(b".i 32\n.o 1\n.type f\n")
 
             # Write the "on-set"
             for key, mask in entries:
                 f.write(key_mask_to_espresso(key, mask) + b" 1\n")
 
             # Write the offset
-            for _, entries in groups[i+1:]:
-                for key, mask in entries:
-                    f.write(key_mask_to_espresso(key, mask) + b" 0\n")
+            if provide_offset:
+                for _, entries in groups[i+1:]:
+                    for key, mask in entries:
+                        f.write(key_mask_to_espresso(key, mask) + b" 0\n")
 
             f.write(b".e")
             f.flush()
@@ -68,22 +73,85 @@ def use_espresso(table):
                 g.seek(0)
                 for line in g:
                     if b'.' not in line:
-                        key, mask = espresso_to_key_mask(line.strip().split()[0])
+                        key, mask = espresso_to_key_mask(
+                            line.decode("utf-8").strip().split()[0])
                         new_table.append(RoutingTableEntry(route, key, mask))
 
     return new_table
 
 
-def my_minimize(chip, table):
-    print("Minimising {}, {} entries...".format(chip, len(table)))
-    table = use_espresso(table)
-    print("... to {} entries".format(len(table)))
-    return chip, table
+def use_espresso_on_entire_table(table, provide_offset):
+    """Call Espresso with appropriate arguments to minimise a routing table."""
+    # Begin by breaking entries up into sets of unique routes
+    route_indices = dict()
+    bits_to_route = dict()
+    for entry in table:
+        if entry.route not in route_indices:
+            route_indices[entry.route] = 1 << len(route_indices)
+            bits_to_route[route_indices[entry.route]] = entry.route
+
+    # Prepare to create a new table
+    new_table = list()
+
+    # Minimise the table, using the route indices as the function output
+    with tempfile.NamedTemporaryFile() as f:
+        if provide_offset:
+            f.write(b".i 32\n.o %u\n.type fr\n" % len(route_indices))
+        else:
+            f.write(b".i 32\n.o %u\n.type f\n" % len(route_indices))
+
+        # Write the "on-set"
+        for entry in table:
+            f.write(
+                key_mask_to_espresso(entry.key, entry.mask) +
+                " {1:0{0}b}\n".format(
+                    len(route_indices),
+                    route_indices[entry.route]).encode("utf-8")
+            )
+
+        f.write(b".e")
+        f.flush()
+
+        # Perform the minimisation and read back the result
+        with tempfile.TemporaryFile() as g:
+            subprocess.call(["espresso", f.name], stdout=g)
+
+            # Read back from g()
+            g.seek(0)
+            for line in g:
+                if b'.' not in line:
+                    keymask, route_str = \
+                        line.decode("utf-8").strip().split(" ", 1)
+                    key, mask = espresso_to_key_mask(keymask)
+                    route = bits_to_route[int(route_str, base=2)]
+                    new_table.append(RoutingTableEntry(route, key, mask))
+
+    return new_table
+
+
+def my_minimize(chip, table, whole_table, provide_offset):
+    sys.stdout.write("{:4d}\t".format(len(table)))
+
+    if whole_table:
+        new_table = use_espresso_on_entire_table(table, provide_offset)
+    else:
+        new_table = use_espresso(table, provide_offset)
+
+    sys.stdout.write("\033[{}m{:4d}\033[39m\t{:.2f}%\n".format(
+        32 if table_is_subset_of(table, new_table) else 31,
+        len(new_table),
+        100. * float(len(table) - len(new_table)) / len(table)
+    ))
+
+    return chip, new_table
 
 if __name__ == "__main__":
     # Parse the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("routing_table")
+    parser.add_argument("out")
+    parser.add_argument("--whole-table", action="store_true", default=False)
+    parser.add_argument("--no-off-set", action="store_true", default=False)
     args = parser.parse_args()
 
     # Load and minimise all routing tables
@@ -93,10 +161,11 @@ if __name__ == "__main__":
 
     print("Minimising routing tables...")
     compressed = dict(
-        my_minimize(chip, table) for chip, table in iteritems(uncompressed)
+        my_minimize(chip, table, args.whole_table, not args.no_off_set) for
+        chip, table in iteritems(uncompressed)
     )
 
-    fn = "espresso" + args.routing_table[12:]
+    fn = args.out
     print("Dumping minimised routing tables to {}...".format(fn))
     with open(fn, "wb+") as f:
         common.dump_routing_tables(f, compressed)
