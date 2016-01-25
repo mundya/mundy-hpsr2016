@@ -39,12 +39,9 @@ def make_routing_tables():
     allocations = {vertex: {Cores: slice(p, p+1)} for (x, y, p), vertex in
                    iteritems(vertices)}
 
-    # Compute the distance dependent probabilities - this is a geometric
-    # distribution such that each core has a 50% chance of being connected to
-    # each core on the same chip, 25% on chips one hop away, 12.5% on chips two
-    # hops away, etc.
-    p = 0.5
-    probs = {d: p*(1 - p)**d for d in range(max(machine.width, machine.height))}
+    # Compute the distance dependent probabilities
+    probs = {d: .5*math.exp(-.65*d) for d in
+             range(max(machine.width, machine.height))}
     print(probs)
 
     # Make the nets, each vertex is connected with distance dependent
@@ -113,7 +110,7 @@ def make_routing_tables():
     constraints = list()
     print("Routing...")
     routing_tree = route(vertices_resources, rig_nets, machine, constraints,
-                         placements, allocations, radius=0)
+                         placements, allocations)
 
     # Assign field widths
     xyp_fields.assign_fields()
