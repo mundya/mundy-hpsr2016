@@ -7,6 +7,7 @@ from rig.machine_control import MachineController
 from rig.routing_table import RoutingTableEntry, Routes
 from six import iteritems, iterkeys, itervalues
 import struct
+import time
 
 
 def pack_table(table, target_length):
@@ -55,11 +56,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("routing_table")
     parser.add_argument("out_file")
-    parser.add_argument("target_length", type='int', default=0)
+    parser.add_argument("target_length", type=int, default=0, nargs='?')
     args = parser.parse_args()
 
     # Load and minimise all routing tables
-    print("Loading routing tables...")
+    print("Reading routing tables...")
     with open(args.routing_table, "rb") as f:
         uncompressed = common.read_routing_tables(f)
 
@@ -81,18 +82,28 @@ if __name__ == "__main__":
     targets = {chip: {1} for chip in iterkeys(chip_mem)}
 
     # Load the data
+    print("Loading data...")
+    t = time.clock()
     for chip, mem in iteritems(chip_mem):
         mem.write(chip_data[chip])
+    load_time = time.clock() - t
+    print("... took {:.3f} s".format(load_time))
 
     # Load the application
-    mc.load_application("./ordered_covering.aplc", targets)
+    print("Loading application...")
+    mc.load_application("./ordered_covering.aplx", targets)
+    t = time.clock()
 
     # Wait until this does something interesting
-    ready = mc.wait_for_cores_to_reach_state("exit", 1, timeout=60.0)
-    if ready < 1:
+    print("Minimising...")
+    ready = mc.wait_for_cores_to_reach_state("exit", len(uncompressed), timeout=60.0)
+    if ready < len(uncompressed):
         raise Exception("Something didn't work...")
+    run_time = time.clock() - t
+    print("... took ~{:.3f} s".format(run_time))
 
     # Read back the routing tables
+    print("Reading back results...")
     for mem in itervalues(chip_mem):
         mem.seek(0)
 
