@@ -59,3 +59,20 @@ def read_routing_tables(fp):
         tables[(x, y)] = entries
 
     return tables
+
+
+def read_table_lengths(fp):
+    """Read routing table lengths from a file."""
+    lengths = dict()
+
+    data = fp.read()
+    offset = 0
+    while offset < len(data):
+        # Read the header
+        x, y, n_entries = struct.unpack_from("<2BH", data, offset)
+        offset += 4 + n_entries*16
+
+        # Store the length
+        lengths[(x, y)] = n_entries
+
+    return lengths
