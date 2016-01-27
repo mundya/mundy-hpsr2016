@@ -4,3 +4,7 @@
 *.out
 *.swp
 *.pyc
+*-blx.bib
+*.bbl
+*.blg
+*.run.xml

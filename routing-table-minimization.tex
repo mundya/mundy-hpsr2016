@@ -1,7 +1,7 @@
 \documentclass[conference]{IEEEtran}
 
 % Document properties
-\title{Order-exploiting routing table minimization for a multicast supercomputer network}
+\title{On-chip order-exploiting routing table minimization for a multicast supercomputer network}
 \author{%
   \IEEEauthorblockN{Andrew~Mundy and Jim~D.~Garside}
   \IEEEauthorblockA{\{\texttt{andrew.mundy}, \texttt{jim.garside}\}\texttt{@manchester.ac.uk}\\
@@ -26,6 +26,12 @@
 \usepackage{sourcecodepro}
 \newcommand{\mytt}[1]{\texttt{\footnotesize#1}}
 
+\usepackage{siunitx}
+
+%% Bibliographies
+\usepackage[backend=bibtex, style=ieee, doi=false, url=false, mincitenames=1, maxcitenames=2, maxbibnames=7]{biblatex}
+\bibliography{paper}
+
 \begin{document}
   \maketitle
 
@@ -39,11 +45,11 @@ This algorithm -- which fits in the small, local memory of a SpiNNaker core -- i
 
   \section{Introduction}
 
-SpiNNaker [REF] is a purpose-built supercomputer intended to facilitate the simulation of large Spiking Neural Networks.
+SpiNNaker~\parencite{Furber2014} is a purpose-built supercomputer intended to facilitate the simulation of large Spiking Neural Networks.
 Software models are distributed across a network of processors which communicate by passing (short) messages.
-Biological neurons in a brain typically have a `fanout' of the order of thousands; SpiNNaker's interconnection structure reflects this in that it supports multicasting packets to an arbitrary set of destinations.
+Biological neurons in a brain typically have a `fanout' of the order of thousands -- SpiNNaker's interconnection structure reflects this in that it supports multicasting packets to an arbitrary set of destinations.
 
-Routeing these packets is done by Address Event Representation (AER)~[REF]; the packet source is identified and routers forward and may duplicate packets which they recognise.
+Routeing these packets is done by Address Event Representation (AER)~\parencite{Boahen2000}; the packet source is identified and routers forward and may duplicate packets which they recognise.
 SpiNNaker comprises custom silicon where each chip has a single router capable of steering packets to or from the 18 on-chip computer cores and inter-chip links.
 The inter-chip network is intended to be a triangularly connected 2D surface, nominally wrapped into a torus to provide greater aggregate bandwidth.
 This can be drawn as a hexagonal mesh but is sometimes more conveniently pictured skewed into squares.
@@ -54,65 +60,37 @@ Because keying every value on every chip is impractical only selected packets ar
 Unrecognised packets are routed in a straight line, e.g.\ from west to east.
 Packets are recognised using a Ternary Content Addressable Memory (TCAM) which will bit-mask a key before looking for particular matches.
 This means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \mytt{X}, the last being a `don't care'.
+In addition the TCAM is is prioritised such that only the first-found match will be returned and this allows `catch all' entries to be inserted near the bottom of the table.
+For example, any packets with the keys \mytt{0111} or \mytt{1111} would match the second entry in the table
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{c l}
+    \toprule
+    Key-Mask & Route \\
+    \midrule
+    \texttt{0000} & \texttt{NE N}\\
+    \texttt{X111} & \texttt{S}\\
+    \texttt{1XXX} & \texttt{3 4}\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\noindent and would thus be routed out of the South link.
+Packets with the key \mytt{0000} would instead match only the first entry and would be routed out of both the North East and North links.
+Other packets beginning with a \mytt{1} would match the last entry and would be routed to the indicated processing cores.
+All other packets would be unrecognised by the router and would thus be routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
+
 The TCAM was chosen with an arbitrary size of 1024 entries, believed large enough for most applications although making entries quite precious.
-It is prioritised so that only the first-found match will be returned which will generate a 24-bit output bit vector (18 local processors + 6 inter-chip links).
-However, examples in this paper have been shortened for clarity.
+Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' connections.
+As the largest SpiNNaker machine will consist of \num{57600} chips, and hence \num{57600} TCAM routing tables, it is desirable to exploit the massive parallelism of SpiNNaker to perform any minimisation of routing tables rather than to minimise tables externally before loading them to the machine.
 
-  For example, any packets with the keys \mytt{0111} or \mytt{1111} would match the second entry in the table
+In this paper we argue that the approach to routing table minimisation used for destination-routed IP routers is insufficient when applied to our multicast supercomputer network.
+We present a modification to this approach which is capable of producing sufficiently minimized tables but argue that it is not suitable for implementation on SpiNNaker.
+Finally, we present a novel algorithm which we have implemented for SpiNNaker and show to achieve compression ratios necessary to \ldots
 
-  \begin{table}[H]
-    \centering
-    \begin{tabular}{c c l}
-      \toprule
-      Key & Mask & Route \\
-      \midrule
-      \texttt{0000} & \texttt{1111} & North East, North \\
-      \texttt{0111} & \texttt{0111} & South \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
 
-  \noindent as \mytt{0b0111 \& 0b0111 == 0b0111} and \mytt{0b1111 \& 0b0111 == 0b0111} and would thus be routed out of the South link.
-  Packets with the key \mytt{0000} would instead match only the first entry and would thus be routed out of both the North East and North links.
-
-  \subsection{Notation}
-
-  Any bits where the key and mask of an entry are both \mytt{0} will match either \mytt{0} or \mytt{1} in packet keys and are effectively ``don't cares'' -- written as \mytt{X}.
-  In addition, the routes \{East, North East, North, West, South West, South\} and Cores 0 to 17 can be shortened to \mytt{E}, \mytt{NE}, \mytt{N}, \mytt{W}, \mytt{SW}, \mytt{S} and \mytt{0} to \mytt{17} respectively.
-  In this notation the above routing table is written as:
-
-  \begin{table}[H]
-    \centering
-    \begin{tabular}{c l}
-      \toprule
-      Key-Mask & Route \\
-      \midrule
-      \texttt{0000} & \texttt{NE N}\\
-      \texttt{X111} & \texttt{S}\\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-
-  \subsection{Entry priority and default routing}
-
-  In the case that a packet matches multiple routing entries only the entry nearest the top of the table has effect.
-  For example, in the table
-
-  \begin{table}[H]
-    \centering
-    \begin{tabular}{c l}
-      \toprule
-      \texttt{1100} & \texttt{E 3}\\
-      \texttt{110X} & \texttt{17}\\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-
-  \noindent any packet with the key \mytt{1100} would match both entries but only the first would have any effect (i.e., the packet would be routed out of the East link and to Core 3).
-  Consequently ``catch all'' rules may be instantiated near the bottom of the table to route packets which do not match any of the entries above them.
-
-  If a packet does not match \textit{any} entry in the routing table then it is routed out of the link opposite to the link through which it arrived at the router (e.g., out of the North link if it arrived on the South link).
-  This behaviour of the router may be considered as being equivalent to there being a large number of implicit entries at the bottom of the routing table.
+\section{Background}
 
   \subsection{Merging routing table entries}
 
@@ -321,11 +299,18 @@ However, examples in this paper have been shortened for clarity.
 
   \section{Results}
 
-  \subsection{Compression ratio}
+\begin{figure}
+  \centering
+  \includegraphics{experiments/results_gaussian}
+\end{figure}
 
-  \subsection{On-chip performance}
+\begin{figure}
+  \centering
+  \includegraphics{experiments/results_centroid}
+\end{figure}
 
   \section{Discussion}
 
   \section{Conclusion}
+\printbibliography
 \end{document}
