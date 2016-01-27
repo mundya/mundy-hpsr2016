@@ -83,23 +83,23 @@ if __name__ == "__main__":
 
     # Load the data
     print("Loading data...")
-    t = time.clock()
+    t = time.time()
     for chip, mem in iteritems(chip_mem):
         mem.write(chip_data[chip])
-    load_time = time.clock() - t
+    load_time = time.time() - t
     print("... took {:.3f} s".format(load_time))
 
     # Load the application
     print("Loading application...")
     mc.load_application("./ordered_covering.aplx", targets)
-    t = time.clock()
+    t = time.time()
 
     # Wait until this does something interesting
     print("Minimising...")
     ready = mc.wait_for_cores_to_reach_state("exit", len(uncompressed), timeout=60.0)
     if ready < len(uncompressed):
         raise Exception("Something didn't work...")
-    run_time = time.clock() - t
+    run_time = time.time() - t
     print("... took ~{:.3f} s".format(run_time))
 
     # Read back the routing tables
