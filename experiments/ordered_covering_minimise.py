@@ -28,7 +28,7 @@ if __name__ == "__main__":
         my_minimize(chip, table) for chip, table in iteritems(uncompressed)
     )
 
-    fn = "ordered_covering" + args.routing_table[12:]
+    fn = "compressed/pyoc_" + args.routing_table.split("/")[1]
     print("Dumping minimised routing tables to {}...".format(fn))
     with open(fn, "wb+") as f:
         common.dump_routing_tables(f, compressed)
