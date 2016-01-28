@@ -12,10 +12,10 @@ if __name__ == "__main__":
     sns.set(context="paper", style="whitegrid", font="Times New Roman")
 
     methods = ("esp_subtables_full", "oc_spinnaker")
-    method_titles = ("Espresso", "Ordered\nCovering")
+    method_titles = ("Order-\nexploiting\nEspresso", "Ordered\nCovering")
 
     # Prepare the figures
-    fig, axs = plt.subplots(1, 2, sharey=True, figsize=(3.5, 1.5))
+    fig, axs = plt.subplots(1, 2, sharey=True, figsize=(3.5, 1.7))
 
     axs[0].spines['left'].set_position(('outward', 5))
     axs[0].set_ylabel("Table size")
@@ -50,6 +50,8 @@ if __name__ == "__main__":
             b.set_facecolor((.85, .85, .85))
             b.set_edgecolor((0, 0, 0))
             b.set_linewidth(1)
+
+        b.set_linewidth(1.5)
 
         y_min = min(y_min, np.min(data))
         y_max = max(y_max, np.max(data))
@@ -119,7 +121,7 @@ if __name__ == "__main__":
         ax.set_xlim(-.5, (len(methods) + 1)*2 + .5)
 
         ax.set_xticks(np.arange(len(methods) + 2)*2)
-        ax.set_xticklabels(("Original", "With default\nrouting") + method_titles, rotation=25, ha='right')
+        ax.set_xticklabels(("Original", "With default\nrouting") + method_titles)
 
     axs[0].set_ylim(y_min, y_max)
     axs[0].set_yticks([y_min, 1024, y_max])
@@ -132,10 +134,10 @@ if __name__ == "__main__":
     sns.set(context="paper", style="whitegrid", font="Times New Roman")
 
     methods = ("esp_tables_no_offset", "esp_subtables_full")
-    method_titles = ("Espresso", "Order-\nexploiting")
+    method_titles = ("Espresso", "Order-\nexploiting\nEspresso")
 
     # Prepare the figures
-    fig, axs = plt.subplots(1, 2, sharey=True, figsize=(3.5, 1.5))
+    fig, axs = plt.subplots(1, 2, sharey=True, figsize=(3.5, 1.7))
 
     axs[0].spines['left'].set_position(('outward', 5))
     axs[0].set_ylabel("Table size")
@@ -171,6 +173,9 @@ if __name__ == "__main__":
             b.set_edgecolor((0, 0, 0))
             b.set_linewidth(1)
 
+        # The last element should be slightly highlighted to indicate that it is new
+        b.set_linewidth(1.5)
+
         y_min = min(y_min, np.min(data))
         y_max = max(y_max, np.max(data))
 
@@ -178,6 +183,7 @@ if __name__ == "__main__":
 
         ax.set_xticks(np.arange(len(methods) + 1)*2)
         ax.set_xticklabels(("Original", ) + method_titles)
+        ax.get_xticklabels()[-1].set_fontweight(1000)
 
     axs[0].set_ylim(y_min, y_max)
     axs[0].set_yticks([y_min, 1024, y_max])
