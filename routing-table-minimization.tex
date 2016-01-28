@@ -309,9 +309,9 @@ Ordered Covering applies the following rules to ensure that the minimized routin
       \toprule
       Key-Mask & Route & Aliases \\
       \midrule
-      \texttt{1100} & \texttt{N} \\
-      \texttt{1101} & \texttt{N} \\
-      \texttt{111X} & \texttt{N} \\
+      \textbf{\texttt{1100}} & \texttt{N} \\
+      \textbf{\texttt{1101}} & \texttt{N} \\
+      \textbf{\texttt{111X}} & \texttt{N} \\
       \texttt{XXXX} & \texttt{4} & \texttt{0100}, \texttt{1011}, \texttt{1110} \\
       \bottomrule
     \end{tabular}
@@ -324,19 +324,46 @@ Ordered Covering applies the following rules to ensure that the minimized routin
   To resolve the covering we attempt to remove entries from the merge such that one of the \mytt{X}s we just identified becomes the opposite of the covered value in the same position.
   In this example, we look to remove entries from the merge such that the merged entry is either \mytt{11\underline{X1}} or \mytt{11\underline{0X}}.
 
-  \textbf{TODO: Finish this example, express algorithmically, explain the effects.}
+  To `set' the entry resulting from the merge to \mytt{11X\underline{1}} we need to remove from the merge any entries with an \mytt{X} or \mytt{0} in the rightmost bit.
+  In this case removing the entries with the key-mask \mytt{110\underline{0}} and \mytt{111\underline{X}} is sufficient.
+  Alternatively, to set the entry resulting from the merge to \mytt{11\underline{0}X} we need to remove from the merge any entries with an \mytt{X} or \mytt{1} in the second rightmost bit.
+  This would entail removing the entry with the key-mask \mytt{111X} from the merge.
 
-  \subsection{The complete algorithm}
+  As we want to merge as many entries as possible we greedily select to remove the fewest number of entries from the merge.
+  The new merge candidate is then:
+
+  \begin{table}[H]
+    \centering
+    \begin{tabular}{c l l}
+      \toprule
+      \textbf{\texttt{1100}} & \texttt{N} \\
+      \textbf{\texttt{1101}} & \texttt{N} \\
+      \texttt{111X} & \texttt{N} \\
+      \texttt{XXXX} & \texttt{4} & \texttt{0100}, \texttt{1011}, \texttt{1110} \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  Which would result in the new entry \mytt{110X} being inserted between \mytt{111X} and \mytt{XXXX}.
+  This merge does not result in any of its constituent entries becoming covered (rule 2a) and does not prevent any of the keys expected by lower entries from reaching them (rule 2b) and so the merge may proceed.
 
   \section{Results}
+
+  TODO:
+  \begin{itemize}
+    \item Andrew has some memory results, but basically a 2048-entry table will fit in memory fine assuming the alias table is implemented sanely.
+    \item Algorithm is complex but effective; code fits in 13KiB
+    \item Something to do with timing (very quick results to grab)
+    \item Jonathan? Something about using multiple cores to minimise as far as necessary.
+    \item Andrew: resurrect circular convolution model?
+  \end{itemize}
 
 \begin{figure}
   \centering
   \includegraphics{experiments/results_esp_and_oc}
 \end{figure}
 
-  \section{Discussion}
-
   \section{Conclusion}
+
 \printbibliography
 \end{document}
