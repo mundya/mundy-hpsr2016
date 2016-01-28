@@ -24,7 +24,7 @@
 \usepackage{sourcecodepro}
 \newcommand{\mytt}[1]{\texttt{\footnotesize#1}}
 
-\usepackage{siunitx}
+\usepackage[binary-units]{siunitx}
 
 %% Bibliographies
 \usepackage[backend=bibtex, style=ieee, doi=false, url=false, mincitenames=1, maxcitenames=2, maxbibnames=7]{biblatex}
@@ -165,8 +165,7 @@ We term this use of table ordering to achieve greater compression of entries ``o
   \centering
   \includegraphics{experiments/results_with_dc}
   \caption{
-    Distributions of routing table sizes for the locally-connected and centroid benchmarks for exact and inexact use of Espresso.
-    When exploiting table ordering to 
+    Distributions of routing table sizes for the locally-connected and centroid benchmarks for exact and order-exploiting use of Espresso.
   }
   \label{fig:results/espresso_with_dc}
 \end{figure}
@@ -174,7 +173,19 @@ We term this use of table ordering to achieve greater compression of entries ``o
 \figurename~\ref{fig:results/espresso_with_dc} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
 As each entry in the original table is still matched by an entry with the same route in the minimized table, routing behaviour is unaffected.
 
-\section{Order-exploiting routing table minimization}
+\subsection*{On-chip logic minimization}
+
+Espresso is capable of very rapidly minimizing routing tables of the scale shown in our benchmarks.
+However, as projected SpiNNaker machines are expected to consist of nearly \num{60000} chips, and the same number of routing tables, the  compute time required to minimize all tables is likely to be significant.
+Minimization on this scale is an `embarrassingly'-parallel problem, and the wall-clock time required to perform this task for SpiNNaker may be significantly reduced by performing the minimization directly on the chips to which the routing tables relate.
+
+Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of data tightly-coupled memory (DTCM) and \SI{32}{\kibi\byte} of instruction tightly-coupled memory (ITCM).
+This places severe limitations on the programs which they may execute.
+While we have shown that Espresso may be used to perform order-exploiting minimization for use with SpiNNaker, its memory usage and code size preclude its use on embedded systems~\parencite{Lysecky2003}.
+In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required.
+
+
+\section{Ordered-Covering}
 
   The algorithm presented in this paper provides two rules which guide how routing tables may be minimized through merging of entries:
 
