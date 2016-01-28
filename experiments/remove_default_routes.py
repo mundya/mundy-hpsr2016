@@ -1,6 +1,7 @@
 import argparse
 import common
 from rig.routing_table.remove_default_routes import minimise
+from rig.routing_table import table_is_subset_of
 from six import iteritems
 import sys
 
@@ -10,6 +11,7 @@ def my_minimize(chip, table):
         chip[0], chip[1], len(table)))
 
     new_table = minimise(table, None)
+    assert table_is_subset_of(table, new_table)
 
     sys.stdout.write("\033[{}m{:4d}\033[39m\t{:.2f}%\n".format(
         32 if len(new_table) < 1024 else 31,

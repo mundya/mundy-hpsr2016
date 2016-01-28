@@ -3,11 +3,9 @@
 % Document properties
 \title{On-chip order-exploiting routing table minimization for a multicast supercomputer network}
 \author{%
-  \IEEEauthorblockN{Andrew~Mundy and Jim~D.~Garside}
-  \IEEEauthorblockA{\{\texttt{andrew.mundy}, \texttt{jim.garside}\}\texttt{@manchester.ac.uk}\\
-                    School of Computer Science,\\
-		    University of Manchester,\\
-                    M13 9PL, UK}
+  \IEEEauthorblockN{Andrew~Mundy, Jonathan~Heathcote and Jim~D.~Garside}
+  \IEEEauthorblockA{School of Computer Science,\\
+                    University of Manchester, UK}
 }
 
 % Prettier tables
@@ -37,9 +35,10 @@
 
   \begin{abstract}
 SpiNNaker is a many-core supercomputer, designed for the simulation of large neural-networks; cores communicate with multicast packets.
-Routeing within SpiNNaker is controlled by ternary content addressable memories (TCAM) of quite limited size, efficient use of which allows more flexibility in the neural-networks to be simulated.
-We present an algorithm for the minimization of multicast routeing tables which exploits the ordered nature of the TCAM.
-This algorithm -- which fits in the small, local memory of a SpiNNaker core -- is shown to outperform the compression ratio achieved by use of Espresso on a wide sample of routeing tables.
+Routing within SpiNNaker is controlled by ternary content addressable memories (TCAM) of quite limited size.
+However, not all neural-network applications will result in routing tables sufficiently small to fit in TCAM and some minimization is necessary.
+In this paper we argue that existing minimization techniques either do not result in sufficiently minimized tables or cannot be implemented within the small code and memory footprint available to a SpiNNaker core.
+To resolve these issues we present a new algorithm which exploits the ordered nature of the TCAM to achieve good compression of routing tables while meeting the code-space and memory constraints of the SpiNNaker platform.
 
   \end{abstract}
 
@@ -47,15 +46,15 @@ This algorithm -- which fits in the small, local memory of a SpiNNaker core -- i
 
 SpiNNaker~\parencite{Furber2014} is a purpose-built supercomputer intended to facilitate the simulation of large Spiking Neural Networks.
 Software models are distributed across a network of processors which communicate by passing (short) messages.
-Biological neurons in a brain typically have a `fanout' of the order of thousands -- SpiNNaker's interconnection structure reflects this in that it supports multicasting packets to an arbitrary set of destinations.
+Biological neurons in a brain typically have a `fanout' of the order of thousands and SpiNNaker's interconnection structure reflects this in that it supports multicasting packets to an arbitrary set of destinations.
 
-Routeing these packets is done by Address Event Representation (AER)~\parencite{Boahen2000}; the packet source is identified and routers forward and may duplicate packets which they recognise.
-SpiNNaker comprises custom silicon where each chip has a single router capable of steering packets to or from the 18 on-chip computer cores and inter-chip links.
+Routing these packets is done by Address Event Representation (AER)~\parencite{Boahen2000}; the packet source is identified and routers forward and may duplicate packets which they recognise.
+SpiNNaker comprises custom silicon where each chip has a single router capable of steering packets to or from the 18~on-chip computer cores and inter-chip links.
 The inter-chip network is intended to be a triangularly connected 2D surface, nominally wrapped into a torus to provide greater aggregate bandwidth.
 This can be drawn as a hexagonal mesh but is sometimes more conveniently pictured skewed into squares.
 The six inter-chip links are typically labelled with compass points (fig. ???).
 
-The routeing key is a 32-bit value which reflects the intended scale of the system: $\sim2^{16}$ chips carry $\sim10^6$ processors or $\sim10^9$ neurons.
+The routing key is a 32-bit value which reflects the intended scale of the system: $\sim2^{16}$ chips carry $\sim10^6$ processors or $\sim10^9$ neurons.
 Because keying every value on every chip is impractical only selected packets are recognised on a given node.
 Unrecognised packets are routed in a straight line, e.g.\ from west to east.
 Packets are recognised using a Ternary Content Addressable Memory (TCAM) which will bit-mask a key before looking for particular matches.
@@ -76,93 +75,106 @@ For example, any packets with the keys \mytt{0111} or \mytt{1111} would match th
   \end{tabular}
 \end{table}
 
-\noindent and would thus be routed out of the South link.
+\noindent and would be routed out of the South link.
 Packets with the key \mytt{0000} would instead match only the first entry and would be routed out of both the North East and North links.
 Other packets beginning with a \mytt{1} would match the last entry and would be routed to the indicated processing cores.
-All other packets would be unrecognised by the router and would thus be routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
+All other packets would be unrecognised by the router and would thus be `default routed' in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
 
 The TCAM was chosen with an arbitrary size of 1024 entries, believed large enough for most applications although making entries quite precious.
 Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' connections.
 As the largest SpiNNaker machine will consist of \num{57600} chips, and hence \num{57600} TCAM routing tables, it is desirable to exploit the massive parallelism of SpiNNaker to perform any minimisation of routing tables rather than to minimise tables externally before loading them to the machine.
 
-In this paper we argue that the approach to routing table minimisation used for destination-routed IP routers is insufficient when applied to our multicast supercomputer network.
-We present a modification to this approach which is capable of producing sufficiently minimized tables but argue that it is not suitable for implementation on SpiNNaker.
-Finally, we present a novel algorithm which we have implemented for SpiNNaker and show to achieve compression ratios necessary to \ldots
+\section{Routing table minimization}
 
+To indicate the importance of routing table minimization to SpiNNaker we constructed two benchmark networks.
+In the first of these networks each processing core in a 144-chip system is connected to every other core in the system with a probability determined by the distance between the cores.
+In our model the probability of there being a connection between two cores is given by $\frac{1}{2}\exp(-0.65d)$ where $d$ is the number of hops in the shortest path between the cores.
+This benchmark models networks in which processing cores are strongly connected to their neighbours but are weakly connected to distant chips.
 
-\section{Background}
+The second benchmark extends the first benchmark by adding a number of longer distance connections to the network and is based on the `centroid' model of \textcite{Navaridas2015}.
+In this model a small number of cores are connected to a group of cores located at some distance across the machine.
+Each core has a \SI{10}{\percent} chance of being connected to a single, distant, group of cores and a \SI{5}{\percent} chance of being connected to two distant groups.
+\figurename~\ref{fig:experiment/setup} illustrates these two benchmarks and shows the probability of a single core being connected to other cores within the network.
 
-  \subsection{Merging routing table entries}
+\begin{figure}
+  \centering
+  \includegraphics{experiments/experiments.pdf}
+  \caption{Map of the probability of a single core being connected to cores on surrounding chips for the two benchmarks.
+           In the above centroid model the core is connected to two clusters of cores (toward the south west and north west).}
+  \label{fig:experiment/setup}
+\end{figure}
 
-  Routing tables can be minimized by merging together entries with equivalent routes.
-  This is done by creating a new key-mask pair with an \mytt{X} in any bit wherever the key-mask pairs of any of the original entries differed or already contained an \mytt{X}.
-  For example, merging the entries:
+Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets between cores.
+This algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables; however, for both our benchmarks the resulting routing tables were still too large to fit in the number of entries available (see \figurename~\ref{fig:results/espresso_no_dc}).
+
+\textcite{Liu2002} presented a method for using Espresso-II~\parencite{Brayton1984} to minimize routing tables for IP routing tables.
+In this method a routing table is partitioned in subtables in which entries have equivalent routing destinations and prefix length.
+Each subtable is minimized using Espresso to produce a functionally equivalent but smaller set of entries.
+\figurename~\ref{fig:results/espresso_no_dc} shows the result of applying this technique to the routing tables from our benchmarks once entries which could be replaced by default routing were removed.
+In the case of the `locally-connected' benchmark a combination of default routing and logic minimization is able to reduce the majority, but not all, of the 144 routing tables to fewer than 1024 entries.
+In the more challenging centroid model this technique is unable to reduce any tables to fit within the TCAM constraint.
+
+\begin{figure}
+  \centering
+  \includegraphics{experiments/results_no_dc}
+  \caption{
+    Distributions of routing table sizes for the locally-connected and centroid benchmarks.
+    Neither default routing nor minimisation is sufficient to minimize the majority of tables in either benchmark sufficiently to fit within the 1024-entry limit required by SpiNNaker.}
+  \label{fig:results/espresso_no_dc}
+\end{figure}
+
+In contrast to the unicast IP routing tables at which minimization is normally targeted SpiNNaker routing tables are multicast.
+Consequently, there are two factors which may explain the poor compression ratios achieved by use of the above technique when applied to SpiNNaker routing tables.
+Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output ports, each SpiNNaker router has the equivalent of up to $2^{24} - 1$ unique routes -- consequently the subtables can be expected to be much smaller.
+Secondly, whereas IP addresses are assigned such that very coarse routing decisions may be made from very few bits, multicasting potentially reduces the amount of mutual information between keys which describe similar routes.
+
+\subsection*{``Order-exploiting'' minimization}
+
+Unlike IP routing tables, SpiNNaker routing tables can be expected to be largely static.
+As such, logic minimization which does not preserve exact equivalence may be used to generate routing tables with far fewer entries.
+For example, combining the first two entries in the table
 
   \begin{table}[H]
     \centering
-    \begin{tabular}{c l}
+    \begin{tabular}{c l l}
       \toprule
-      \texttt{0000} & \texttt{N}\\
-      \texttt{0001} & \texttt{N}\\
+      Key-Mask & Route \\
+      \midrule
+      \texttt{0001} & \texttt{N} \\
+      \texttt{0010} & \texttt{N} \\
+      \texttt{1111} & \texttt{S} \\
       \bottomrule
     \end{tabular}
   \end{table}
 
-  \noindent would result in the new entry:
+\noindent would result in a new entry (\mytt{00XX}) which would match more keys than were matched by the original two entries.
+In IP routing tables, which are considerably larger than those in SpiNNaker and are highly dynamic, this minimization would be avoided as it would (a) require the minimizer to inspect the entire table during minimization to avoid breaking the functionality of the table,
+and (b) slow down the process of updating the table to deal with changed routes.
+However, in the case of SpiNNaker -- and other systems with largely static routing tables and very tight constraints on entries -- this technique may allow for significant reductions in table size.
 
-  \begin{table}[H]
-    \centering
-    \begin{tabular}{c l}
-      \toprule
-      \texttt{000X} & \texttt{N}\\
-      \bottomrule
-    \end{tabular}
-  \end{table}
+We extended the technique of \textcite{Liu2002} to investigate the effect of this style of minimization on our benchmark networks.
+First, each routing table is split into subtables of entries with the same route.
+Next the subtables are ordered in increasing order of the number of entries they contain; that is: smaller subtables are moved to the top of the routing table and larger ones toward the bottom.
+Finally, the minimization procedure from Espresso is applied.
+However, unlike the technique proposed by \textcite{Liu2002}, we provide Espresso with the set of all entries contained in lower subtables as the OFF-set.
+Consequently each subtable is minimized such that the compressed subtable matches all the keys matched by the original subtable and may match any other keys \textit{not} matched in lower subtables.
+The minimized table is now reliant on the TCAM ordering to ensure that a packet matches the correct entry.
+We term this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
 
-  \noindent which matches exactly the keys matched by the original entries.
-  In contrast, merging the entries \mytt{0001} and \mytt{0010} would result in \mytt{00XX} which would match any packets with the keys \mytt{0000} and \mytt{0011} \textit{in addition} to those matched by the original entries.
+\begin{figure}
+  \centering
+  \includegraphics{experiments/results_with_dc}
+  \caption{
+    Distributions of routing table sizes for the locally-connected and centroid benchmarks for exact and inexact use of Espresso.
+    When exploiting table ordering to 
+  }
+  \label{fig:results/espresso_with_dc}
+\end{figure}
 
-  Clearly, care must be taken if tables such as
+\figurename~\ref{fig:results/espresso_with_dc} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
+As each entry in the original table is still matched by an entry with the same route in the minimized table, routing behaviour is unaffected.
 
-  \begin{table}[H]
-    \centering
-    \begin{tabular}{c l}
-      \toprule
-      \texttt{0001} & \texttt{N}\\
-      \texttt{0010} & \texttt{N}\\
-      \texttt{0000} & \texttt{SW S}\\
-      \texttt{0011} & \texttt{SW}\\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-
-  \noindent are to remain functionally equivalent after minimization -- as, for example, merging the first two entries and leaving the result in place would result in the functionally different:
-
-  \begin{table}[H]
-    \centering
-    \begin{tabular}{c l}
-      \toprule
-      \texttt{00XX} & \texttt{N}\\
-      \texttt{0000} & \texttt{SW S}\\
-      \texttt{0011} & \texttt{SW}\\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-
-  \subsection{Orthogonality}
-
-  A routing table is orthogonal if are no keys that are matched by multiple table entries.
-  For example, the following tables are functionally equivalent but the left-hand table is non-orthogonal as the key \mytt{1110} is matched by both entries in the table:
-
-  \begin{figure}[H]
-    \centering
-    \includegraphics{figures/orthogonality}
-  \end{figure}
-
-  It is typically easier to minimize orthogonal routing tables, but it should be noted that minimizing a table will often (but not always) produce a non-orthogonal table.
-  Consequently any algorithm which proceeds by repeatedly applying minimization steps to a table must be capable of working with non-orthogonal tables; for this reason some of the examples in this paper use non-orthogonal tables.
-
-  \section{Order-exploiting routing table minimization}
+\section{Order-exploiting routing table minimization}
 
   The algorithm presented in this paper provides two rules which guide how routing tables may be minimized through merging of entries:
 
@@ -301,12 +313,7 @@ Finally, we present a novel algorithm which we have implemented for SpiNNaker an
 
 \begin{figure}
   \centering
-  \includegraphics{experiments/results_gaussian}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \includegraphics{experiments/results_centroid}
+  \includegraphics{experiments/results_esp_and_oc}
 \end{figure}
 
   \section{Discussion}

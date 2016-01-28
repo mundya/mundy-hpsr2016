@@ -1,7 +1,8 @@
 import argparse
 import common
 from collections import defaultdict
-from rig.routing_table import RoutingTableEntry
+from rig.routing_table import RoutingTableEntry, table_is_subset_of
+from rig.routing_table.remove_default_routes import minimise as rde_minimise
 from six import iteritems
 import subprocess
 import sys
@@ -129,15 +130,22 @@ def use_espresso_on_entire_table(table, provide_offset):
     return new_table
 
 
-def my_minimize(chip, table, whole_table, provide_offset):
+def my_minimize(chip, table, whole_table, provide_offset, remove_default_entries):
     sys.stdout.write("({:3d}, {:3d})\t{:4d}\t".format(
         chip[0], chip[1], len(table)))
     sys.stdout.flush()
 
+    table_ = table
+
+    if remove_default_entries:
+        table_ = rde_minimise(table, None)
+
     if whole_table:
-        new_table = use_espresso_on_entire_table(table, provide_offset)
+        new_table = use_espresso_on_entire_table(table_, provide_offset)
     else:
-        new_table = use_espresso(table, provide_offset)
+        new_table = use_espresso(table_, provide_offset)
+
+    assert table_is_subset_of(table, new_table)
 
     sys.stdout.write("\033[{}m{:4d}\033[39m\t{:.2f}%\n".format(
         32 if len(new_table) < 1024 else 31,
@@ -154,6 +162,7 @@ if __name__ == "__main__":
     parser.add_argument("out")
     parser.add_argument("--whole-table", action="store_true", default=False)
     parser.add_argument("--no-off-set", action="store_true", default=False)
+    parser.add_argument("--remove-default-entries", action="store_true", default=False)
     args = parser.parse_args()
 
     # Load and minimise all routing tables
@@ -163,7 +172,7 @@ if __name__ == "__main__":
 
     print("Minimising routing tables...")
     compressed = dict(
-        my_minimize(chip, table, args.whole_table, not args.no_off_set) for
+        my_minimize(chip, table, args.whole_table, not args.no_off_set, args.remove_default_entries) for
         chip, table in iteritems(uncompressed)
     )
 
