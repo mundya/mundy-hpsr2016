@@ -187,7 +187,8 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
 \section{Ordered-Covering}
 
-  The algorithm presented in this paper provides two rules which guide how routing tables may be minimized through merging of entries:
+We present a novel algorithm called ``Ordered-Covering''~(OC) which is capable of performing order-exploiting routing table minimization within the small memory and code-space available on SpiNNaker.
+Ordered Covering applies the following rules to ensure that the minimized routing table is behaviourally equivalent to the original:
 
   \begin{enumerate}[\IEEEsetlabelwidth{2)}]
     \item Routing tables are to be kept sorted in increasing order of the number of \mytt{X}s contained in their keys and masks, that is in increasing order of \textit{generality}.
@@ -195,6 +196,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
       \begin{enumerate}[\IEEEsetlabelwidth{a)}]
         \item Additionally, new entries must be inserted below existing entries of equivalent generality.
               For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted below it.
+              This requirement is intended to reduce the cost of obeying the following two rules.
       \end{enumerate}
     \item Any merge may be made provided that it would not
       \begin{enumerate}[\IEEEsetlabelwidth{b)}]
@@ -248,13 +250,20 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \item $\proc{Apply-Merge}$ applies a merge to a routing table using rule~(1) to determine where the new entry should be inserted
   \end{itemize}
 
-  Initially $\proc{Get-Largest-Merge}$ should immediately reject any merge which breaks either rule~(2a)~or~(2b).
+  It should be noted that the algorithm terminates when $\attrib{table}{length} \le \id{target}$.
+  This can save a large amount of time in comparison to fully minimizing the table.
+
+  Merge candidates may be made by any means, in our implementation we attempt to merge all entries in the table with the same routing direction.
+  Initially $\proc{Get-Largest-Merge}$ should immediately reject any merge candidate which breaks either rule~(2a)~or~(2b).
   However, this will lead to very poor minimization.
-  To improve performance methods are required which modify potential merges to obey both rules.
+  To improve performance methods are required which modify potential merges such that they obey both rules.
 
   \subsection{Resolving the up-check}
 
-  Consider the table
+  To ensure that a merge does not break rule (2a) we inspect every entry in the merge.
+  If between the position where the entry resulting from the merge would be inserted and the current position of the entry there is an entry which matches the entry in question then that entry must be removed from merge.
+
+  For example, consider the table:
 
   \begin{figure}[H]
     \centering
@@ -262,15 +271,15 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \end{figure}
 
   \noindent Initially we consider merging the first three entries.
-  Doing so, however, would involve moving the first matching entry for \mytt{0000} below \mytt{0X00} which would break rule~(2a).
-  To resolve this we can remove \mytt{0000} from the merge, resulting in:
+  Doing so, however, would involve moving the entry for \mytt{0000} below \mytt{00XX}.
+  As \mytt{0000} intersects with \mytt{00XX} it must be removed from the merge, resulting in:
 
   \begin{figure}[H]
     \centering
     \includegraphics{figures/upcheck_resolve_example_2}
   \end{figure}
 
-  \textbf{TODO: Express this algorithmically, explain the effects}
+  \noindent which is a valid merge.
 
   \subsection{Resolving the down-check}
   
@@ -283,7 +292,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \figurename~\ref{fig:algorithm/rule2b'_example} shows an example of a merge which would previously have been disallowed by rule~(2b) but would be valid given extra information and this revision to rule~(2b).
 
-  \begin{figure}
+  \begin{figure}[!b]
     \centering
     \includegraphics{figures/aliases_example}
     \caption{
