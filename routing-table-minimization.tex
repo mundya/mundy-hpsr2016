@@ -181,8 +181,16 @@ Minimization on this scale is an `embarrassingly'-parallel problem, and the wall
 Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of data tightly-coupled memory (DTCM) and \SI{32}{\kibi\byte} of instruction tightly-coupled memory (ITCM).
 This places severe limitations on the programs which they may execute.
 While we have shown that Espresso may be used to perform order-exploiting minimization for use with SpiNNaker, its memory usage and code size preclude its use on embedded systems~\parencite{Lysecky2003}.
-In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required.
+In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required, see \figurename~\ref{fig:results/results_with_mtrie}.
 
+\begin{figure}
+  \centering
+  \includegraphics{experiments/results_with_mtrie}
+  \caption{
+    Distributions of routing table sizes for the locally-connected and centroid benchmarks for Espresso and m-Trie minimization.
+  }
+  \label{fig:results/results_with_mtrie}
+\end{figure}
 
 \section{Ordered-Covering}
 
