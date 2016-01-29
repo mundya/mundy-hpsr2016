@@ -214,23 +214,31 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
 \section{Ordered-Covering}
 
-We present a novel algorithm called ``Ordered-Covering''~(OC) which is capable of performing order-exploiting routing table minimization within the small memory and code-space available on SpiNNaker.
-Ordered Covering applies the following rules to ensure that the minimized routing table is behaviourally equivalent to the original:
+  We present a novel algorithm called ``Ordered-Covering'' which is capable of performing order-exploiting routing table minimization within the small memory and code-space available on SpiNNaker.
+  The algorithm proceeds by sequentially \textit{merging} sets of routing table entries while ensuring these merged entries do not \textit{cover} existing entries. 
+  
+  To merge a set of routing entries they are replaced with one containing only the bits common to all the original entries and \mytt{X}s for all other bits.
+  E.g., \mytt{1010} and \mytt{0110} would be merged to produce \mytt{XX10}.
+  Additionally, routing entries can only be merged if they share the same output ports.
+  
+  A routing entry covers another when the set of keys matched by one entry intersects with those of another below it in the table.
 
-  \begin{enumerate}[\IEEEsetlabelwidth{2)}]
-    \item Routing tables are to be kept sorted in increasing order of the number of \mytt{X}s contained in their keys and masks, that is in increasing order of \textit{generality}.
-      For example, an entry with the key-mask of \mytt{00XX} (\textit{generality} of 2) must be placed below any entries with fewer \mytt{X}s in their key-masks, e.g., below \mytt{0000} and \mytt{00X1} (generalities of 0 and 1 respectively).
+  Specifically, the following \textit{Ordered-Covering rules} apply:
+
+  \begin{enumerate}[\IEEEsetlabelwidth{3)}]
+    \item Routing tables must be ordered as follows:
       \begin{enumerate}[\IEEEsetlabelwidth{a)}]
-        \item Additionally, new entries must be inserted below existing entries of equivalent generality.
+        \item First in increasing order of \textit{generality}, i.e. the number \mytt{X}s contained in their keys and masks.
+              For example, an entry with the key-mask of \mytt{00XX} (\textit{generality} of 2) must be placed below any entries with fewer \mytt{X}s in their key-masks, e.g., below \mytt{0000} and \mytt{00X1} (generalities of 0 and 1 respectively).
+        \item Second, new entries must be inserted below existing entries of equivalent generality.
               For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted below it.
-              This requirement is intended to reduce the cost of obeying the following two rules.
       \end{enumerate}
-    \item Any merge may be made provided that it would not
+    \item Merges are only allowed which would not
       \begin{enumerate}[\IEEEsetlabelwidth{b)}]
         \item cause any entry in the merge to become \textit{covered} by an entry higher up the table.
-              A merge that would be disallowed by this rule is shown in \figurename~\ref{fig:algorithm/rule2a_example}.
               This rule is referred to as the \textit{up-check} rule.
-        \item cause any entry below the merge to become covered (see \figurename~\ref{fig:algorithm/rule2b_example}).
+              A merge that would be disallowed by this rule is shown in \figurename~\ref{fig:algorithm/rule2a_example}.
+        \item cause any entry below the merge to become \textit{covered} (see \figurename~\ref{fig:algorithm/rule2b_example}).
               This rule is referred to as the \textit{down-check} rule.
       \end{enumerate}
   \end{enumerate}
@@ -239,7 +247,7 @@ Ordered Covering applies the following rules to ensure that the minimized routin
     \centering
     \includegraphics{figures/rule2a_example}
     \caption{
-      Example of a merge which does not obey rule~(2a), the \textit{up-check}.
+      Example of a merge which does not obey the \textit{up-check} rule~(2a).
       Before the merge a packet with key \mytt{0001} would have been routed to \mytt{E~S}; after the merge the same packet would be routed to \mytt{N} instead.
       This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers} it.
     }
@@ -250,14 +258,14 @@ Ordered Covering applies the following rules to ensure that the minimized routin
     \centering
     \includegraphics{figures/rule2b_example}
     \caption{
-      Example of a merge which does not obey rule~(2b), the \textit{down-check}.
+      Example of a merge which does not obey the \textit{down-check} rule~(2b).
       Before the merge a packet with key \mytt{1100} would have been routed to \mytt{NE~S}; after the merge the same packet would be routed to \mytt{SW 2} instead.
       This is because the merge has resulted in the insertion of a new entry which \textit{covers} an existing entry.
     }
     \label{fig:algorithm/rule2b_example}
   \end{figure}
 
-  These rules may be transformed into a simple, greedy, algorithm to minimize a routing table:
+  A simple, greedy, algorithm for minimize a routing tables according to these rules is thus:
 
   \begin{codebox}
     \Procname{$\proc{Minimize}(\id{table}, \id{target})$}
@@ -273,17 +281,17 @@ Ordered Covering applies the following rules to ensure that the minimized routin
   \noindent Where:
   \begin{itemize}
     \item $\id{table}$ is a routing table that is sorted according to rule~(1)
-    \item $\proc{Get-Largest-Merge}$ is a function which returns a (possibly empty) set of routing table entries which may be merged without breaking rule~(2)
-    \item $\proc{Apply-Merge}$ applies a merge to a routing table using rule~(1) to determine where the new entry should be inserted
+    \item $\proc{Get-Largest-Merge}$ is a function which returns a (possibly empty) set of routing table entries which may be merged without breaking the up- or down-check rules~(2)
+    \item $\proc{Apply-Merge}$ merges the set of routing entries and uses rule~(1) to determine where the new entry
   \end{itemize}
 
-  It should be noted that the algorithm terminates when $\attrib{table}{length} \le \id{target}$.
-  This can save a large amount of time in comparison to fully minimizing the table.
+  The algorithm terminates early if $\attrib{table}{length} \le \id{target}$ which can save a large amount of time in comparison to fully minimizing the table.
 
-  Merge candidates may be made by any means, in our implementation we attempt to merge all entries in the table with the same routing direction.
-  Initially $\proc{Get-Largest-Merge}$ should immediately reject any merge candidate which breaks either rule~(2a)~or~(2b).
-  However, this will lead to very poor minimization.
-  To improve performance methods are required which modify potential merges such that they obey both rules.
+  The $\proc{Get-Largest-Merge}$ function is where the algorithm spends most of its time and we present one possible implementation in the remainder of this section.
+  Our implementation considers merging all groups of entries in the table which share the same set of output ports.
+  In practice, merging these groups will often violate either rule~(2a)~or~(2b).
+  Rather than immediately rejecting these merge candidates, we use a pair of simple greedy approaches to iteratively remove entries from merge candidates until both rules are obeyed.
+  We split our approach into two phases, the first refines merge candidates until they obey the up-check rule and the second does the same for the down-check rule.
 
   \subsection{Resolving the up-check}
 
