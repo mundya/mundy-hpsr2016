@@ -295,8 +295,9 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \subsection{Resolving the up-check}
 
-  To ensure that a merge does not break rule (2a) we inspect every entry in the merge.
-  If between the position where the entry resulting from the merge would be inserted and the current position of the entry there is an entry which matches the entry in question then that entry must be removed from merge.
+  For each merge candidate we inspect every entry in the merge to ensure it does not break the up-check rule~(2a).
+  When inspecting an entry, $e$, in the merge candidate we scan through the entries between $e$ and the position the merged entry is inserted.
+  If any entry is found which would cover $e$, $e$ is removed from the merge candidate before continuing to check the next entry in the candidate merge.
 
   For example, consider the table:
 
@@ -305,16 +306,15 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \includegraphics{figures/upcheck_resolve_example_1}
   \end{figure}
 
-  \noindent Initially we consider merging the first three entries.
-  Doing so, however, would involve moving the entry for \mytt{0000} below \mytt{00XX}.
-  As \mytt{0000} intersects with \mytt{00XX} it must be removed from the merge, resulting in:
+  \noindent Initially we could consider merging the first three entries.
+  Doing so, however, would mean that \mytt{0000} would be covered by \mytt{00XX} when merged into the new \mytt{XXX0} below so it must be removed from the merge, resulting in:
 
   \begin{figure}[H]
     \centering
     \includegraphics{figures/upcheck_resolve_example_2}
   \end{figure}
 
-  \noindent which is a valid merge.
+  \noindent Since the remaining entries in the merge candidate (\mytt{1000} and \mytt{1110}) are not covered, this merge obeys the up-check rule.
 
   \subsection{Resolving the down-check}
   
