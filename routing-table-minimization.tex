@@ -73,13 +73,13 @@ This can be drawn as a hexagonal mesh but is sometimes more conveniently picture
 The six inter-chip links are typically labelled with compass points (\figurename~\ref{fig:diagrams/topology}).
 
 \begin{figure}[!b]
-	
-	\center
-	\input{diagrams/topology}
-	
+  
+  \center
+  \input{diagrams/topology}
+  
   \caption{SpiNNaker chips (squares) in a triangular torus topology. Wrap-around links omitted for clarity.}
   \label{fig:diagrams/topology}
-	
+  
 \end{figure}
 
 Routing these packets is done by Address Event Representation (AER)~\parencite{Boahen2000}; each packet contains a routing key which identifies its source and routers forward (and may duplicate) packets towards their destination(s).
