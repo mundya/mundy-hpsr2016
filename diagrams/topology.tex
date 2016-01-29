@@ -1,0 +1,100 @@
+\begin{tikzpicture}[thick, font=\footnotesize, line cap=round]
+	
+	\pgfmathtruncatemacro{\width}{5}
+	\pgfmathtruncatemacro{\height}{5}
+	
+	\pgfmathsetlengthmacro{\sep}{0.8em}
+	\pgfmathsetlengthmacro{\size}{1em}
+	
+	\pgfmathsetlengthmacro{\compass}{1.5em}
+	
+	% Draw (and label) a chip
+	% #1: x
+	% #2: y
+	% #3: extra options
+	\newcommand{\chip}[3]{
+		\node (x#1y#2)
+		      [ minimum width=\size
+		      , minimum height=\size
+		      , node distance=\sep
+		      , inner sep=0
+		      , draw
+		      , #3
+		      ]
+		      {};
+	}
+	
+	% Draw the chips
+	\chip{1}{1}{}
+	\foreach [count=\lasty] \y in {2,...,\height}{
+		\chip{1}{\y}{above=of x1y\lasty}
+	}
+	\foreach \y in {1,...,\height}{
+		\foreach [count=\lastx] \x in {2,...,\width}{
+			\chip{\x}{\y}{right=of x\lastx y\y}
+		}
+	}
+	
+	% Draw NE/SW Links
+	\foreach [count=\lastx] \x in {2,...,\width}{
+		\foreach [count=\lasty] \y in {2,...,\height}{
+			% NE/SW
+			\draw (x\lastx y\lasty) -- (x\x y\y);
+		}
+	}
+	
+	% Draw N/S Links
+	\foreach  \x in {1,...,\width}{
+		\foreach [count=\lasty] \y in {2,...,\height}{
+			% NE/SW
+			\draw (x\x y\lasty) -- (x\x y\y);
+		}
+	}
+	
+	% Draw E/W Links
+	\foreach [count=\lastx] \x in {2,...,\width}{
+		\foreach \y in {1,...,\height}{
+			% NE/SW
+			\draw (x\lastx y\y) -- (x\x y\y);
+		}
+	}
+	
+	% Draw outer links along top and bottom
+	\foreach \x in {1,...,\width}{
+		% NE/SW
+		\draw (x\x y\height) -- +(+\sep, +\sep);
+		\draw (x\x y1) -- +(-\sep, -\sep);
+		
+		% N/S
+		\draw (x\x y\height) -- +(0, +\sep);
+		\draw (x\x y1) -- +(0, -\sep);
+	}
+	
+	% Draw outer links along left and right
+	\foreach \y in {1,...,\height}{
+		% NE/SW (NB: prevent redrawing of corner diagonals)
+		\ifthenelse{\y < \height}{
+			\draw (x\width y\y) -- +(+\sep, +\sep);
+		}{}
+		\ifthenelse{\y > 1}{
+			\draw (x1y\y) -- +(-\sep, -\sep);
+		}{}
+		
+		% E/W
+		\draw (x\width y\y) -- +(+\sep, 0);
+		\draw (x1y\y) -- +(-\sep, 0);
+	}
+	
+	
+	% Draw the 'compass'
+	\coordinate (center) at ([xshift=-3.0*\compass]$(x1y1.west)!0.5!(x1y\height.west)$);
+	
+	\draw [->] (center) -- ++(\compass, \compass) node [anchor=south west] {NE};
+	\draw [->] (center) -- ++(-\compass, -\compass) node [anchor=north east] {SW};
+	\draw [->] (center) -- ++(\compass, 0) node [anchor=west] {E};
+	\draw [->] (center) -- ++(-\compass, 0) node [anchor=east] {W};
+	\draw [->] (center) -- ++(0, \compass) node [anchor=south] {N};
+	\draw [->] (center) -- ++(0, -\compass) node [anchor=north] {S};
+	
+\end{tikzpicture}
+
