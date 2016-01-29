@@ -14,6 +14,25 @@
 % Pictures
 \usepackage{graphicx}
 
+% Diagrams
+\usepackage{tikz}
+\usepackage{ifthen}
+\usetikzlibrary{ calc
+               , backgrounds
+               , positioning
+               , decorations.pathreplacing
+               , decorations.markings
+               , arrows
+               , positioning
+               , automata
+               , shadows
+               , fit
+               , shapes
+               , arrows
+               , patterns
+               , spy
+               }
+
 % Pseudo-code
 \usepackage{clrscode3e}
 
@@ -51,7 +70,17 @@ Biological neurons in a brain typically have a `fanout' of the order of thousand
 SpiNNaker comprises custom silicon where each chip has a single router capable of steering packets to or from the 18~on-chip processor cores and inter-chip links.
 The inter-chip network is intended to be a triangularly connected 2D surface, nominally wrapped into a torus to provide greater aggregate bandwidth.
 This can be drawn as a hexagonal mesh but is sometimes more conveniently pictured skewed into squares.
-The six inter-chip links are typically labelled with compass points (fig. ???).
+The six inter-chip links are typically labelled with compass points (\figurename~\ref{fig:diagrams/topology}).
+
+\begin{figure}
+	
+	\center
+	\input{diagrams/topology}
+	
+  \caption{SpiNNaker chips (squares) in a triangular torus topology. Wrap-around links omitted for clarity.}
+  \label{fig:diagrams/topology}
+	
+\end{figure}
 
 Routing these packets is done by Address Event Representation (AER)~\parencite{Boahen2000}; each packet contains a routing key which identifies its source and routers forward (and may duplicate) packets towards their destination(s).
 SpiNNaker uses 32-bit routing keys which reflects the intended scale of the system: $\sim2^{16}$ SpiNNaker chips carry $\sim10^6$ processors or $\sim10^9 (\approx 2^{30})$ neurons, each of which must be uniquely identified.
