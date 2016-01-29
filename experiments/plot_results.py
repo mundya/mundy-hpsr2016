@@ -230,7 +230,7 @@ if __name__ == "__main__":
         xs = np.arange(len(datasets))*2
         elems = ax.violinplot(data.T, xs, showextrema=False)
         for b in elems["bodies"][:-2]:
-            b.set_alpha(.5)
+            b.set_alpha(.3)
             b.set_facecolor((.85, .85, .85))
             b.set_edgecolor((0, 0, 0))
             b.set_linewidth(1)
