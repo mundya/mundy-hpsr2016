@@ -152,6 +152,15 @@ In the more challenging centroid model this technique is unable to reduce any ta
   \label{fig:results/espresso_no_dc}
 \end{figure}
 
+\begin{figure*}[!t]
+  \centering
+  \includegraphics{experiments/results_with_esp_dc_and_mtrie}
+  \caption{
+    Distributions of routing table sizes for the locally-connected and centroid benchmarks for exact and order-exploiting use of Espresso and m-Trie.
+  }
+  \label{fig:results/espresso_with_dc_and_mtrie}
+\end{figure*}
+
 In contrast to the unicast IP routing tables at which minimization is normally targeted SpiNNaker routing tables are multicast.
 Consequently, there are two factors which may explain the poor compression ratios achieved by use of the above technique when applied to SpiNNaker routing tables.
 Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output ports, each SpiNNaker router has the equivalent of up to $2^{24} - 1$ unique routes -- consequently the number of entries with equivalent routes can be expected to be much smaller.
@@ -190,16 +199,7 @@ Consequently each subtable is minimized such that the compressed subtable matche
 The minimized table exploits TCAM ordering to ensure that a routing keys match the correct entries.
 We term this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
 
-\begin{figure}
-  \centering
-  \includegraphics{experiments/results_with_dc}
-  \caption{
-    Distributions of routing table sizes for the locally-connected and centroid benchmarks for exact and order-exploiting use of Espresso.
-  }
-  \label{fig:results/espresso_with_dc}
-\end{figure}
-
-\figurename~\ref{fig:results/espresso_with_dc} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
+\figurename~\ref{fig:results/espresso_with_dc_and_mtrie} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
 
 \subsection*{On-chip logic minimization}
 
@@ -210,16 +210,7 @@ Minimization on this scale is an `embarrassingly'-parallel problem, and the wall
 Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of data tightly-coupled memory (DTCM) and \SI{32}{\kibi\byte} of instruction tightly-coupled memory (ITCM).
 This places severe limitations on the programs which they may execute.
 While we have shown that Espresso may be used to perform order-exploiting minimization for use with SpiNNaker, its memory usage and code size preclude its use on embedded systems~\parencite{Lysecky2003}.
-In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required, see \figurename~\ref{fig:results/results_with_mtrie}.
-
-\begin{figure}
-  \centering
-  \includegraphics{experiments/results_with_mtrie}
-  \caption{
-    Distributions of routing table sizes for the locally-connected and centroid benchmarks for Espresso and m-Trie minimization.
-  }
-  \label{fig:results/results_with_mtrie}
-\end{figure}
+In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required (see \figurename~\ref{fig:results/espresso_with_dc_and_mtrie}).
 
 \section{Ordered-Covering}
 
