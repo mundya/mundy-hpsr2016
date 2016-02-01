@@ -87,9 +87,9 @@ SpiNNaker uses 32-bit routing keys which reflects the intended scale of the syst
 Routers use a Ternary Content Addressable Memory (TCAM) to decide how to route incoming packets which bit-mask keys before looking for particular matches.
 This means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \mytt{X} (`don't care').
 In addition the TCAM is is prioritised such that only the first-found match will be returned and this allows `catch all' entries to be inserted near the bottom of the table.
-Finally, if a key is not found in the table, the packet is `default routed' continuing in the direction it arrived (e.g. an unrecognised packet arriving via the East link is default routed out of the West link).
+Finally, if a key is not found in the table, the packet is `default routed' continuing in the direction it arrived (e.g., an unrecognised packet arriving via the East link is default routed out of the West link).
 
-For a simplified example with 4-bit keys, given a routing table
+For example, given a simplified routing table with 4-bit keys
 
 \begin{table}[H]
   \centering
@@ -107,11 +107,11 @@ For a simplified example with 4-bit keys, given a routing table
 \noindent any packets with the keys \mytt{0111} or \mytt{1111} would match the second entry in the table and would be routed out of the South link.
 Packets with the key \mytt{0000} would instead match only the first entry and would be routed out of both the North East and North links.
 Other packets beginning with a \mytt{1} would match the last entry and would be routed to the indicated processing cores.
-All other packets would be unrecognised by the router and are default routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
+All other packets would be unrecognised by the router and would be default routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
 
-The TCAM was chosen with an arbitrary size of 1024 entries, believed large enough for most applications although making entries quite precious.
+The TCAM was chosen with an arbitrary size of \num{1024}~entries, believed large enough for most applications although making entries quite precious.
 Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' routes.
-As the largest SpiNNaker machine will consist of \num{57600} chips, and hence \num{57600} TCAM routing tables, it is desirable to exploit the massive parallelism of SpiNNaker to perform any minimisation of routing tables rather than to minimise tables externally before loading them to the machine. As we will show, this presents a challenge due to the limited on-chip memory available.
+As the largest SpiNNaker machine will consist of \num{57600}~chips, and the same number of TCAM routing tables, it is desirable to exploit the massive parallelism of SpiNNaker to perform any minimisation of routing tables rather than to minimise tables externally before loading them to the machine. As we will show, this presents a challenge due to the limited on-chip memory available.
 
 \section{Routing table minimization}
 
@@ -136,11 +136,11 @@ Each core has a \SI{10}{\percent} chance of being connected to a single, distant
 Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets between cores.
 This algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables; however, for both our benchmarks the resulting routing tables were still too large to fit in the number of entries available (see \figurename~\ref{fig:results/espresso_no_dc}).
 
-\textcite{Liu2002} presented a method for using Espresso-II~\parencite{Brayton1984} to minimize routing tables for IP routing tables.
+\textcite{Liu2002} presented a method for using Espresso-II~\parencite{Brayton1984} to minimize routing tables for IP routers.
 In this method a routing table is partitioned in subtables in which entries have equivalent routing destinations and prefix length.
 Each subtable is minimized using Espresso to produce a functionally equivalent but smaller set of entries.
 \figurename~\ref{fig:results/espresso_no_dc} shows the result of applying this technique to the routing tables from our benchmarks once entries which could be replaced by default routing were removed.
-In the case of the `locally-connected' benchmark a combination of default routing and logic minimization is able to reduce the majority, but not all, of the 144 routing tables to fewer than 1024 entries.
+In the case of the `locally-connected' benchmark a combination of default routing and logic minimization is able to reduce the majority, but not all, of the 144 routing tables to fewer than \num{1024}~entries.
 In the more challenging centroid model this technique is unable to reduce any tables to fit within the TCAM constraint.
 
 \begin{figure}
@@ -169,7 +169,7 @@ Secondly, whereas IP addresses are assigned such that very coarse routing decisi
 \subsection*{``Order-exploiting'' minimization}
 
 Unlike IP routing tables, SpiNNaker routing tables can be expected to be largely static.
-As such, logic minimization which does not preserve exact equivalence, but rather match a superset of the routing keys used, may be used to generate routing tables with far fewer entries.
+As such, logic minimization which does not preserve exact equivalence, but instead matches a superset of the routing keys used, may be used to generate routing tables with far fewer entries.
 For example, the first two entries in the table
 
   \begin{table}[H]
@@ -195,16 +195,16 @@ First, each routing table is split into subtables of entries with the same route
 Next the subtables are ordered in increasing order of the number of entries they contain; that is: smaller subtables are moved to the top of the routing table and larger ones toward the bottom.
 Finally, the minimization procedure from Espresso is applied.
 However, unlike the technique proposed by \textcite{Liu2002}, we provide Espresso with the set of all entries contained in lower subtables as the OFF-set.
-Consequently each subtable is minimized such that the compressed subtable matches a superset of keys matched by the original subtable and may match any other keys \textit{not} matched in lower subtables.
+Consequently each subtable is minimized such that the compressed result matches a superset of keys matched by the original and may match any other keys \textit{not} matched in lower subtables.
 The minimized table exploits TCAM ordering to ensure that a routing keys match the correct entries.
-We term this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
+We call this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
 
 \figurename~\ref{fig:results/espresso_with_dc_and_mtrie} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
 
 \subsection*{On-chip logic minimization}
 
 Espresso is capable of very rapidly minimizing routing tables of the scale shown in our benchmarks.
-However, as projected SpiNNaker machines are expected to consist of nearly \num{60000} chips, and the same number of routing tables, the  compute time required to minimize all tables is likely to be significant.
+However, as projected SpiNNaker machines are expected to consist of nearly sixty-thousand chips, and the same number of routing tables, the  compute time required to minimize all tables is likely to be significant.
 Minimization on this scale is an `embarrassingly'-parallel problem, and the wall-clock time required to perform this task for SpiNNaker may be significantly reduced by performing the minimization directly on the chips to which the routing tables relate.
 
 Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of data tightly-coupled memory (DTCM) and \SI{32}{\kibi\byte} of instruction tightly-coupled memory (ITCM).
@@ -215,12 +215,9 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 \section{Ordered-Covering}
 
   We present a novel algorithm called ``Ordered-Covering'' which is capable of performing order-exploiting routing table minimization within the small memory and code-space available on SpiNNaker.
-  The algorithm proceeds by sequentially \textit{merging} sets of routing table entries while ensuring these merged entries do not \textit{cover} existing entries. 
-  
-  To merge a set of routing entries they are replaced with one containing only the bits common to all the original entries and \mytt{X}s for all other bits.
-  E.g., \mytt{1010} and \mytt{0110} would be merged to produce \mytt{XX10}.
-  Additionally, routing entries can only be merged if they share the same output ports.
-  
+  The algorithm proceeds by sequentially \textit{merging} sets of routing table entries with the same output ports while ensuring these merged entries do not \textit{cover} existing entries. 
+  A set of routing entries is merged by replacing them with one new entry containing only the bits common to all the original entries and \mytt{X}s for all other bits
+  (e.g., \mytt{1010} and \mytt{0110} would be merged to produce \mytt{XX10}).
   A routing entry covers another when the set of keys matched by one entry intersects with those of another below it in the table.
 
   Specifically, the following \textit{Ordered-Covering rules} apply:
@@ -228,12 +225,12 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \begin{enumerate}[\IEEEsetlabelwidth{3)}]
     \item Routing tables must be ordered as follows:
       \begin{enumerate}[\IEEEsetlabelwidth{a)}]
-        \item First in increasing order of \textit{generality}, i.e. the number \mytt{X}s contained in their keys and masks.
+        \item Firstly, in increasing order of \textit{generality}, i.e., the number \mytt{X}s contained in their keys and masks.
               For example, an entry with the key-mask of \mytt{00XX} (\textit{generality} of 2) must be placed below any entries with fewer \mytt{X}s in their key-masks, e.g., below \mytt{0000} and \mytt{00X1} (generalities of 0 and 1 respectively).
-        \item Second, new entries must be inserted below existing entries of equivalent generality.
+        \item Secondly, new entries must be inserted below existing entries of equivalent generality.
               For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted below it.
       \end{enumerate}
-    \item Merges are only allowed which would not
+    \item The only merges are only allowed are those which would not
       \begin{enumerate}[\IEEEsetlabelwidth{b)}]
         \item cause any entry in the merge to become \textit{covered} by an entry higher up the table.
               This rule is referred to as the \textit{up-check} rule.
