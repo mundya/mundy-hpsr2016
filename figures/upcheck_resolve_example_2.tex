@@ -14,26 +14,26 @@
 \begin{tikzpicture}
   % Original table
   \node (original) {
-    \begin{tabular}{c l}
+    \begin{tabular}{c l r}
       \toprule
-      \texttt{0000} & \texttt{N NE} \tikz[na]\node [coordinate] (e0) {}; \\
-      \texttt{1000} & \texttt{N NE}\\
-      \texttt{1110} & \texttt{N NE} \tikz[na]\node [coordinate] (e1) {}; \\
-      \texttt{00XX} & \texttt{S}\\
+      \texttt{0000} & \texttt{N NE}\\
+      \texttt{1000} & \texttt{N NE} & \tikz[na]\node [coordinate] (e0) {}; \\
+      \texttt{1110} & \texttt{N NE} & \tikz[na]\node [coordinate] (e1) {}; \\
+      \texttt{00XX} & \texttt{S} & \ldots\\
       \\
       \bottomrule
     \end{tabular}
   };
 
   % Table after merging
-  \node (invalid) [right=of original] {
-    \begin{tabular}{c l}
+  \node (invalid) [right=1em of original] {
+    \begin{tabular}{c l l}
       \toprule
       \texttt{0000} & \texttt{N NE}\\
       \\
       \\
-      \texttt{00XX} & \texttt{S}\\
-      \tikz[na]\node [coordinate] (e2) {};\texttt{1XX0} & \texttt{N NE}\\
+      \texttt{00XX} & \texttt{S} & \ldots\\
+      \tikz[na]\node [coordinate] (e2) {};\texttt{1XX0} & \texttt{N NE} & \texttt{1000 1110}\\
       \bottomrule
     \end{tabular}
   };

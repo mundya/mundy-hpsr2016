@@ -14,24 +14,24 @@
 \begin{tikzpicture}
   % Original table
   \node (original) {
-    \begin{tabular}{c l}
+    \begin{tabular}{c l r}
       \toprule
-      \texttt{0011} & \texttt{E S} \tikz[na]\node [coordinate] (e0) {}; \\
-      \texttt{1100} & \texttt{E S} \tikz[na]\node [coordinate] (e1) {}; \\
-      \texttt{00XX} & \texttt{N} \\
+      \texttt{0011} & \texttt{E S} & \tikz[na]\node [coordinate] (e0) {}; \\
+      \texttt{1100} & \texttt{E S} & \tikz[na]\node [coordinate] (e1) {}; \\
+      \texttt{00XX} & \texttt{N} & \ldots \\
       \\
       \bottomrule
     \end{tabular}
   };
 
   % Table after merging
-  \node (invalid) [right=of original] {
-    \begin{tabular}{c l}
+  \node (invalid) [right=1em of original] {
+    \begin{tabular}{c l l}
       \toprule
       \\
       \\
-      \texttt{00XX} & \texttt{N} \\
-      \tikz[na]\node [coordinate] (e2) {};\texttt{XXXX} & \texttt{E S} \\
+      \texttt{00XX} & \texttt{N} & \ldots\\
+      \tikz[na]\node [coordinate] (e2) {};\texttt{XXXX} & \texttt{E S} & \texttt{0011 1100} \\
       \bottomrule
     \end{tabular}
   };
