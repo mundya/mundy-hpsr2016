@@ -14,22 +14,22 @@
 \begin{tikzpicture}
   % Original table
   \node (original) {
-    \begin{tabular}{c l}
+    \begin{tabular}{c l r}
       \toprule
-      \texttt{1101} & \texttt{SW 2} \tikz[na]\node [coordinate] (e0) {}; \\
-      \texttt{1110} & \texttt{SW 2} \tikz[na]\node [coordinate] (e1) {}; \\
-      \texttt{XXXX} & \texttt{NE S} \\
+      \texttt{1101} & \texttt{SW 2} & \tikz[na]\node [coordinate] (e0) {}; \\
+      \texttt{1110} & \texttt{SW 2} & \tikz[na]\node [coordinate] (e1) {}; \\
+      \texttt{XXXX} & \texttt{NE S} & \texttt{1100} \ldots \\
       \bottomrule
     \end{tabular}
   };
 
   % Table after merging
-  \node (invalid) [right=of original] {
-    \begin{tabular}{c l}
+  \node (invalid) [right=1em of original] {
+    \begin{tabular}{c l l}
       \toprule
       \\
-      \tikz[na]\node [coordinate] (e2) {};\texttt{11XX} & \texttt{SW 2} \\
-      \texttt{XXXX} & \texttt{NE S} \\
+      \tikz[na]\node [coordinate] (e2) {};\texttt{11XX} & \texttt{SW 2} & \ldots \\
+      \texttt{XXXX} & \texttt{NE S} & \texttt{1100} \ldots \\
       \bottomrule
     \end{tabular}
   };
