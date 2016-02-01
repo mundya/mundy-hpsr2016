@@ -3,7 +3,7 @@
 \usepackage{times}
 \usepackage{sourcecodepro}
 
-\usetikzlibrary{arrows.meta, decorations.pathreplacing, positioning}
+\usetikzlibrary{arrows.meta, decorations.pathreplacing, positioning, shapes.misc}
 \tikzset{
   na/.style = {baseline=-.5ex},
   every picture/.append style={remember picture},
@@ -39,6 +39,7 @@
   % Add some arrows
   \draw [thick, red, decoration={brace}, decorate] ([yshift=+1ex] e0) -- ([yshift=-.5ex] e1)
     node [midway, coordinate] (merge) {};
-  \draw [thick, red, out=0, in=180, arrows={-Triangle[]}, shorten >=3pt] ([xshift=2pt] merge) to (e2);
+  \draw [thick, red, out=0, in=180, arrows={-Triangle[]}, shorten >=3pt] ([xshift=2pt] merge) to
+    node [pos=.4, cross out, draw=red, ultra thick, minimum size=.75em, shorten >=0pt] {} (e2);
 \end{tikzpicture}
 \end{document}
