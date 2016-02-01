@@ -234,7 +234,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \begin{figure*}
     \subfloat[%
       A merge which does not obey the \textit{up-check} rule~(2a).
-      Before the merge a packet with key \mytt{0001} would have been routed to \mytt{E~S}; after the merge the same packet would be routed to \mytt{N} instead.
+      Before the merge a packet with key \mytt{0011} would have been routed to \mytt{E~S}; after the merge the same packet would be routed to \mytt{N} instead.
       This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers} it.
     ]{%
       \label{fig:algorithm/rule2a_example}
@@ -269,7 +269,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
         \item Secondly, new entries must be inserted below existing entries of equivalent generality.
               For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted below it.
       \end{enumerate}
-    \item The only merges are only allowed are those which would not
+    \item The only merges are only allowed are those which would not:
       \begin{enumerate}[\IEEEsetlabelwidth{b)}]
         \item cause any entry in the merge to become \textit{covered} by an entry higher up the table.
               This rule is referred to as the \textit{up-check} rule.
@@ -341,7 +341,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
       \textbf{\texttt{1100}} & \texttt{N} \\
       \textbf{\texttt{1101}} & \texttt{N} \\
       \textbf{\texttt{111X}} & \texttt{N} \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100}, \texttt{1011}, \texttt{1110} \\
+      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110} \\
       \bottomrule
     \end{tabular}
   \end{table}
@@ -368,7 +368,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
       \textbf{\texttt{1100}} & \texttt{N} \\
       \textbf{\texttt{1101}} & \texttt{N} \\
       \texttt{111X} & \texttt{N} \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100}, \texttt{1011}, \texttt{1110} \\
+      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110} \\
       \bottomrule
     \end{tabular}
   \end{table}
