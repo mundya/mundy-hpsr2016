@@ -18,9 +18,10 @@
       \toprule
       Key-Mask & Route & Aliases \\
       \midrule
-      \tikz[na]\node [coordinate] (e0) {};\texttt{1101} & \texttt{SW 2} \\
-      \tikz[na]\node [coordinate] (e1) {};\texttt{1110} & \texttt{SW 2} \\
-      \texttt{XXXX} & \texttt{NE S} & \texttt{1011}, \texttt{0100}\\
+      \tikz[na]\node [coordinate] (e0) {};\texttt{1011} & \texttt{NE S} \\
+      \tikz[na]\node [coordinate] (e1) {};\texttt{0100} & \texttt{NE S} \\
+      \texttt{1101} & \texttt{SW 2} \\
+      \texttt{1110} & \texttt{SW 2} & \texttt{\hspace*{5.5em}}\\
       \bottomrule
     \end{tabular}
   };
@@ -29,9 +30,11 @@
   \node (invalid) [below=1em of original] {
     \begin{tabular}{c l l}
       \toprule
-      \tikz[na]\node [coordinate] (e2) {};\texttt{11XX} & \texttt{SW 2} &
-        \texttt{1101}, \texttt{1110}\\
-      \texttt{XXXX} & \texttt{NE S} & \texttt{1011}, \texttt{0100}\\
+      Key-Mask & Route & Aliases \\
+      \midrule
+      \texttt{1101} & \texttt{SW 2} \\
+      \texttt{1110} & \texttt{SW 2} \\
+      \tikz[na]\node [coordinate] (e2) {};\texttt{XXXX} & \texttt{NE S} & \texttt{1011 0100}\\
       \bottomrule
     \end{tabular}
   };

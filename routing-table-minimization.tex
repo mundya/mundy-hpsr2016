@@ -222,7 +222,44 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   (e.g., \mytt{1010} and \mytt{0110} would be merged to produce \mytt{XX10}).
   A routing entry covers another when the set of keys matched by one entry intersects with those of another below it in the table.
 
-  Specifically, the following \textit{Ordered-Covering rules} apply:
+  We also annotate each entry in the table with the set of of keys that it is expected to match, the \textit{aliases} of the entry.
+  An empty aliases set simply means that the entry is expected to match all of the packets which would be matched by its key.
+  For example, merging the first two entries in the following table would generate a new entry with the original keys listed as aliases:
+
+  \begin{figure}[H]
+    \centering
+    \includegraphics{figures/aliases_example}
+  \end{figure}
+
+  \begin{figure*}
+    \subfloat[%
+      A merge which does not obey the \textit{up-check} rule~(2a).
+      Before the merge a packet with key \mytt{0001} would have been routed to \mytt{E~S}; after the merge the same packet would be routed to \mytt{N} instead.
+      This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers} it.
+    ]{%
+      \label{fig:algorithm/rule2a_example}
+      \begin{minipage}{.95\columnwidth}
+        \centering
+        \includegraphics{figures/rule2a_example}
+      \end{minipage}
+    }
+    \hfill
+    \subfloat[%
+      A merge which does not obey the \textit{down-check} rule~(2b).
+      Before the merge a packet with key \mytt{1100} would have been routed to \mytt{NE~S}; after the merge the same packet would be routed to \mytt{SW 2} instead.
+      This is because the merge has resulted in the insertion of a new entry which \textit{covers} an existing entry.
+    ]{%
+      \label{fig:algorithm/rule2b_example}
+      \begin{minipage}{.95\columnwidth}
+        \centering
+        \includegraphics{figures/rule2b_example}
+      \end{minipage}
+    }
+    \caption{Examples of invalid merges as defined by the \textit{Ordered-Covering} rules}
+    \label{fig:algorithm/rules}
+  \end{figure*}
+
+  When minimizing a routing table, the following \textit{Ordered-Covering rules} are used:
 
   \begin{enumerate}[\IEEEsetlabelwidth{3)}]
     \item Routing tables must be ordered as follows:
@@ -237,38 +274,10 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
         \item cause any entry in the merge to become \textit{covered} by an entry higher up the table.
               This rule is referred to as the \textit{up-check} rule.
               A merge that would be disallowed by this rule is shown in \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2a_example}.
-            \item cause any entry below the merge to become \textit{covered}, see \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2b_example}.
+            \item cause any entry or \textit{aliased entry} below the merge to become \textit{covered}, see \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2b_example}.
               This rule is referred to as the \textit{down-check} rule.
       \end{enumerate}
   \end{enumerate}
-
-  \begin{figure*}
-    \subfloat[%
-      Example of a merge which does not obey the \textit{up-check} rule~(2a).
-      Before the merge a packet with key \mytt{0001} would have been routed to \mytt{E~S}; after the merge the same packet would be routed to \mytt{N} instead.
-      This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers} it.
-    ]{%
-      \label{fig:algorithm/rule2a_example}
-      \begin{minipage}{.95\columnwidth}
-        \centering
-        \includegraphics{figures/rule2a_example}
-      \end{minipage}
-    }
-    \hfill
-    \subfloat[%
-      Example of a merge which does not obey the \textit{down-check} rule~(2b).
-      Before the merge a packet with key \mytt{1100} would have been routed to \mytt{NE~S}; after the merge the same packet would be routed to \mytt{SW 2} instead.
-      This is because the merge has resulted in the insertion of a new entry which \textit{covers} an existing entry.
-    ]{%
-      \label{fig:algorithm/rule2b_example}
-      \begin{minipage}{.95\columnwidth}
-        \centering
-        \includegraphics{figures/rule2b_example}
-      \end{minipage}
-    }
-    \caption{Examples of invalid merges as defined by the \textit{Ordered-Covering} rules}
-    \label{fig:algorithm/rules}
-  \end{figure*}
 
   A simple, greedy, algorithm for minimize a routing tables according to these rules is thus:\par\nopagebreak
   \begin{codebox}
@@ -300,11 +309,10 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \subsection{Resolving the up-check}
 
   For each merge candidate we inspect every entry in the merge to ensure it does not break the up-check rule~(2a).
-  When inspecting an entry, $e$, in the merge candidate we scan through the entries between $e$ and the position the merged entry is inserted.
-  If any entry is found which would cover $e$, $e$ is removed from the merge candidate before continuing to check the next entry in the candidate merge.
+  When inspecting an entry, $e$, in the merge candidate we scan through the entries between $e$ and the position where the merged entry would be inserted.
+  If any entry is found which would cover $e$, $e$ is removed from the merge candidate and we proceed to check the next entry in the candidate merge.
 
-  For example, consider the table:
-
+  For example, consider the table:\par\nopagebreak
   \begin{figure}[H]
     \centering
     \includegraphics{figures/upcheck_resolve_example_1}
@@ -322,25 +330,6 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \subsection{Resolving the down-check}
   
-  Rule~(2b) disallows any merges which would create a new entry that would cover any entries below the point where it would be inserted.
-  However, if routing table entries are annotated with the keys (expressed as key-masks) that they are expected to match then rule~(2b) can be re-expressed as:
-
-  \begin{quote}
-    Any merge may be made provided that it would not cause any key which is expected to be matched by an entry below the merge to become covered.
-  \end{quote}
-
-  \figurename~\ref{fig:algorithm/rule2b'_example} shows an example of a merge which would previously have been disallowed by rule~(2b) but would be valid given extra information and this revision to rule~(2b).
-
-  \begin{figure}
-    \centering
-    \includegraphics{figures/aliases_example}
-    \caption{
-      Example of a merge which does not obey rule~(2b), the \textit{down-check}, but is valid if extra information about which keys are expected to reach which entries is provided.
-      While the merge would result in a packet with key \mytt{1100} being routed differently, \textit{no such packet is expected to reach the bottom routing table entry} and neither of the keys that are expected (\mytt{1011} and \mytt{0100}) will match the entry inserted by the merge (\mytt{11XX}).
-    }
-    \label{fig:algorithm/rule2b'_example}
-  \end{figure}
-
   Consider the table:
 
   \begin{table}[H]
