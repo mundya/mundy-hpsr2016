@@ -44,6 +44,7 @@
 \newcommand{\mytt}[1]{\texttt{\footnotesize#1}}
 
 \usepackage[binary-units]{siunitx}
+\usepackage[caption=false, font=footnotesize]{subfig}
 
 %% Bibliographies
 \usepackage[backend=bibtex, style=ieee, doi=false, url=false, mincitenames=1, maxcitenames=2, maxbibnames=7]{biblatex}
@@ -235,36 +236,41 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
       \begin{enumerate}[\IEEEsetlabelwidth{b)}]
         \item cause any entry in the merge to become \textit{covered} by an entry higher up the table.
               This rule is referred to as the \textit{up-check} rule.
-              A merge that would be disallowed by this rule is shown in \figurename~\ref{fig:algorithm/rule2a_example}.
-        \item cause any entry below the merge to become \textit{covered} (see \figurename~\ref{fig:algorithm/rule2b_example}).
+              A merge that would be disallowed by this rule is shown in \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2a_example}.
+            \item cause any entry below the merge to become \textit{covered}, see \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2b_example}.
               This rule is referred to as the \textit{down-check} rule.
       \end{enumerate}
   \end{enumerate}
 
-  \begin{figure}
-    \centering
-    \includegraphics{figures/rule2a_example}
-    \caption{
+  \begin{figure*}
+    \subfloat[%
       Example of a merge which does not obey the \textit{up-check} rule~(2a).
       Before the merge a packet with key \mytt{0001} would have been routed to \mytt{E~S}; after the merge the same packet would be routed to \mytt{N} instead.
       This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers} it.
+    ]{%
+      \label{fig:algorithm/rule2a_example}
+      \begin{minipage}{.95\columnwidth}
+        \centering
+        \includegraphics{figures/rule2a_example}
+      \end{minipage}
     }
-    \label{fig:algorithm/rule2a_example}
-  \end{figure}
-
-  \begin{figure}
-    \centering
-    \includegraphics{figures/rule2b_example}
-    \caption{
+    \hfill
+    \subfloat[%
       Example of a merge which does not obey the \textit{down-check} rule~(2b).
       Before the merge a packet with key \mytt{1100} would have been routed to \mytt{NE~S}; after the merge the same packet would be routed to \mytt{SW 2} instead.
       This is because the merge has resulted in the insertion of a new entry which \textit{covers} an existing entry.
+    ]{%
+      \label{fig:algorithm/rule2b_example}
+      \begin{minipage}{.95\columnwidth}
+        \centering
+        \includegraphics{figures/rule2b_example}
+      \end{minipage}
     }
-    \label{fig:algorithm/rule2b_example}
-  \end{figure}
+    \caption{Examples of invalid merges as defined by the \textit{Ordered-Covering} rules}
+    \label{fig:algorithm/rules}
+  \end{figure*}
 
-  A simple, greedy, algorithm for minimize a routing tables according to these rules is thus:
-
+  A simple, greedy, algorithm for minimize a routing tables according to these rules is thus:\par\nopagebreak
   \begin{codebox}
     \Procname{$\proc{Minimize}(\id{table}, \id{target})$}
     \li \While $\attrib{table}{length} >  \id{target}$
