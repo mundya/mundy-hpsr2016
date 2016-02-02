@@ -1,12 +1,13 @@
 """Constructs routing tables for a SpiNNaker 3-board toroid that simulates
-all-to-all connections between cores.
+all-to-all connections between cores with distance dependent probability.
 
-Three sets of routing tables are produced for the same network:
+Four sets of routing tables are produced for the same network:
     * With keys assigned using a Hilbert Curve (this will tend to ensure that
       similar keys originated in physical proximal chips)
     * With keys assigned using the (x, y, p) of each core - a common SpiNNaker
       approach
     * With keys assigned using the (x, y, z, p) of each core
+    * With 21-bit keys randomly assigned to each core
 
 Routing is performed by the NER algorithm, as implemented in Rig.
 """
@@ -42,10 +43,10 @@ def make_routing_tables():
     # Compute the distance dependent probabilities
     probs = {d: .5*math.exp(-.65*d) for d in
              range(max(machine.width, machine.height))}
-    print(probs)
 
     # Make the nets, each vertex is connected with distance dependent
     # probability to other vertices.
+    random.seed(123)
     nets = dict()
     for source_coord, source in iteritems(vertices):
         # Convert source_coord to xyz form
@@ -85,10 +86,16 @@ def make_routing_tables():
     hilbert_fields.add_field("index", length=16, start_at=16)
     hilbert_fields.add_field("p", length=5, start_at=11)
 
+    random.seed(321)
+    rnd_fields = BitField(32)
+    rnd_fields.add_field("rnd", length=21, start_at=11)
+    rnd_seen = set()
+
     # Generate the routing keys
     net_keys_xyp = dict()
     net_keys_xyzp = dict()
     net_keys_hilbert = dict()
+    net_keys_rnd = dict()
     for i, (x, y) in enumerate(chip for chip in hilbert_chip_order(machine) if
                                chip in machine):
         # Add the key for each net from each processor
@@ -106,6 +113,13 @@ def make_routing_tables():
             # Construct the Hilbert key/mask
             net_keys_hilbert[net] = hilbert_fields(index=i, p=p)
 
+            # Construct the "random 21 bit value" field
+            val = None
+            while val is None or val in rnd_seen:
+                val = random.getrandbits(21)
+            rnd_seen.add(val)
+            net_keys_rnd[net] = rnd_fields(rnd=val)
+
     # Route the network and then generate the routing tables
     constraints = list()
     print("Routing...")
@@ -120,7 +134,8 @@ def make_routing_tables():
     # Write the routing tables to file
     for fields, desc in ((net_keys_xyp, "xyp"),
                          (net_keys_xyzp, "xyzp"),
-                         (net_keys_hilbert, "hilbert")):
+                         (net_keys_hilbert, "hilbert"),
+                         (net_keys_rnd, "rnd")):
         print("Getting keys and masks...")
         keys = {net: (bf.get_value(), bf.get_mask()) for net, bf in
                 iteritems(fields)}
