@@ -28,7 +28,9 @@ def make_routing_tables():
     machine = Machine(12, 12)
 
     # Assign a vertex to each of the 17 application cores on each chip
-    vertices = {(x, y, p): object() for x, y in machine for p in range(1, 18)}
+    vertices = OrderedDict(
+        ((x, y, p), object()) for x, y in machine for p in range(1, 18)
+    )
 
     # Generate the vertex resources, placements and allocations (required for
     # routing)
@@ -162,11 +164,6 @@ def make_routing_tables():
     routing_tree = route(vertices_resources, rig_nets, machine, constraints,
                          placements, allocations)
 
-    # Assign field widths
-    xyp_fields.assign_fields()
-    xyzp_fields.assign_fields()
-    hilbert_fields.assign_fields()
-
     # Write the routing tables to file
     for fields, desc in ((net_keys_xyp, "xyp"),
                          (net_keys_xyzp, "xyzp"),
@@ -187,6 +184,7 @@ def make_routing_tables():
             machine.width, machine.height, desc)
         with open(fn, "wb+") as f:
             dump_routing_tables(f, tables)
+
 
 if __name__ == "__main__":
     make_routing_tables()

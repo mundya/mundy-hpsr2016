@@ -7,10 +7,11 @@ Four sets of routing tables are produced for the same network:
     * With keys assigned using the (x, y, p) of each core - a common SpiNNaker
       approach
     * With keys assigned using the (x, y, z, p) of each core
-    * With 21-bit keys randomly assigned to each core
+    * With 12-bit keys randomly assigned to each core
 
 Routing is performed by the NER algorithm, as implemented in Rig.
 """
+from collections import OrderedDict
 import math
 import random
 from rig.bitfield import BitField
@@ -30,15 +31,22 @@ def make_routing_tables():
     machine = Machine(12, 12)
 
     # Assign a vertex to each of the 17 application cores on each chip
-    vertices = {(x, y, p): object() for x, y in machine for p in range(1, 18)}
+    vertices = OrderedDict(
+        ((x, y, p), object()) for x, y in machine for p in range(1, 18)
+    )
 
     # Generate the vertex resources, placements and allocations (required for
     # routing)
-    vertices_resources = {vertex: {Cores: 1} for vertex in
-                          itervalues(vertices)}
-    placements = {vertex: (x, y) for (x, y, p), vertex in iteritems(vertices)}
-    allocations = {vertex: {Cores: slice(p, p+1)} for (x, y, p), vertex in
-                   iteritems(vertices)}
+    vertices_resources = OrderedDict(
+        (vertex, {Cores: 1}) for vertex in itervalues(vertices)
+    )
+    placements = OrderedDict(
+        (vertex, (x, y)) for (x, y, p), vertex in iteritems(vertices)
+    )
+    allocations = OrderedDict(
+        (vertex, {Cores: slice(p, p+1)}) for (x, y, p), vertex in
+        iteritems(vertices)
+    )
 
     # Compute the distance dependent probabilities
     probs = {d: .5*math.exp(-.65*d) for d in
@@ -47,7 +55,7 @@ def make_routing_tables():
     # Make the nets, each vertex is connected with distance dependent
     # probability to other vertices.
     random.seed(123)
-    nets = dict()
+    nets = OrderedDict()
     for source_coord, source in iteritems(vertices):
         # Convert source_coord to xyz form
         source_coord_xyz = minimise_xyz(to_xyz(source_coord[:-1]))
@@ -88,14 +96,14 @@ def make_routing_tables():
 
     random.seed(321)
     rnd_fields = BitField(32)
-    rnd_fields.add_field("rnd", length=21, start_at=11)
+    rnd_fields.add_field("rnd", length=12, start_at=20)
     rnd_seen = set()
 
     # Generate the routing keys
-    net_keys_xyp = dict()
-    net_keys_xyzp = dict()
-    net_keys_hilbert = dict()
-    net_keys_rnd = dict()
+    net_keys_xyp = OrderedDict()
+    net_keys_xyzp = OrderedDict()
+    net_keys_hilbert = OrderedDict()
+    net_keys_rnd = OrderedDict()
     for i, (x, y) in enumerate(chip for chip in hilbert_chip_order(machine) if
                                chip in machine):
         # Add the key for each net from each processor
@@ -113,10 +121,10 @@ def make_routing_tables():
             # Construct the Hilbert key/mask
             net_keys_hilbert[net] = hilbert_fields(index=i, p=p)
 
-            # Construct the "random 21 bit value" field
+            # Construct the random 12 bit value field
             val = None
             while val is None or val in rnd_seen:
-                val = random.getrandbits(21)
+                val = random.getrandbits(12)
             rnd_seen.add(val)
             net_keys_rnd[net] = rnd_fields(rnd=val)
 
@@ -125,11 +133,6 @@ def make_routing_tables():
     print("Routing...")
     routing_tree = route(vertices_resources, rig_nets, machine, constraints,
                          placements, allocations)
-
-    # Assign field widths
-    xyp_fields.assign_fields()
-    xyzp_fields.assign_fields()
-    hilbert_fields.assign_fields()
 
     # Write the routing tables to file
     for fields, desc in ((net_keys_xyp, "xyp"),
