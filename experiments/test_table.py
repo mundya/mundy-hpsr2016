@@ -12,17 +12,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Load and test all routing tables
-    sys.stdout.write("Loading...")
-    sys.stdout.flush()
+    print("Loading...")
     with open(args.original_table, "rb") as f:
         original = common.read_routing_tables(f)
 
     with open(args.compressed_table, "rb") as f:
         compressed = common.read_routing_tables(f)
 
-    sys.stdout.write("\rTesting...")
-    sys.stdout.flush()
+    print("Testing...")
     for chip, table in iteritems(original):
+        print("\t{}".format(chip))
         assert table_is_subset_of(table, compressed[chip])
-
-    sys.stdout.write("\n")
