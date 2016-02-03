@@ -1,11 +1,12 @@
 \documentclass[tikz]{standalone}
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{times}
 \usepackage{sourcecodepro}
 
 \usetikzlibrary{arrows.meta, decorations.pathreplacing, positioning, shapes.misc}
 \tikzset{
-  na/.style = {baseline=-.5ex},
+  na/.style = {baseline=-.75ex},
   every picture/.append style={remember picture},
   every node/.append style={font=\footnotesize},
 }
@@ -14,12 +15,14 @@
 \begin{tikzpicture}
   % Original table
   \node (original) {
-    \begin{tabular}{c l r}
+    \begin{tabular}{c l l r}
       \toprule
-      \texttt{1100} & \texttt{N} &\tikz[na]\node [coordinate] (e0) {}; \\
+      \texttt{1100} & \texttt{N} & & \tikz[na]\node [coordinate] (e0) {}; \\
       \texttt{1101} & \texttt{N}\\
-      \texttt{111X} & \texttt{N} & \tikz[na]\node [coordinate] (e1) {}; \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
+      \texttt{111X} & \texttt{N} & & \tikz[na]\node [coordinate] (e1) {}; \\
+      \multirow{2}{*}{\texttt{XXXX}} &
+      \multirow{2}{*}{\texttt{4}} & \texttt{0100 1011}\\
+                     &            & \texttt{1110}\\
       \bottomrule
     \end{tabular}
   };
@@ -29,9 +32,12 @@
     \begin{tabular}{c l l}
       \toprule
       \\
-      \\
-      \tikz[na]\node [coordinate] (e2) {};\texttt{11XX} & \texttt{N} & \texttt{1100 1101 111X} \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
+      \multirow{2}{*}{\tikz[na]\node [coordinate] (e2) {};\texttt{11XX}} &
+      \multirow{2}{*}{\texttt{N}} & \texttt{1100 1101} \\
+                                                        &            & \texttt{111X} \\
+      \multirow{2}{*}{\texttt{XXXX}} &
+      \multirow{2}{*}{\texttt{4}} & \texttt{0100 1011}\\
+                     &            & \texttt{1110}\\
       \bottomrule
     \end{tabular}
   };

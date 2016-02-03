@@ -1,5 +1,6 @@
 \documentclass[tikz]{standalone}
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{times}
 \usepackage{sourcecodepro}
 
@@ -14,13 +15,15 @@
 \begin{tikzpicture}
   % Original table
   \node (original) {
-    \begin{tabular}{c l r}
+    \begin{tabular}{c l l r}
       \toprule
-      \texttt{1100} & \texttt{N} &\tikz[na]\node [coordinate] (e0) {}; \\
-      \texttt{1101} & \texttt{N} & \tikz[na]\node [coordinate] (e1) {}; \\
+      \texttt{1100} & \texttt{N} & & \tikz[na]\node [coordinate] (e0) {}; \\
+      \texttt{1101} & \texttt{N} & & \tikz[na]\node [coordinate] (e1) {}; \\
       \texttt{111X} & \texttt{N}\\
       \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
+      \multirow{2}{*}{\texttt{XXXX}} &
+      \multirow{2}{*}{\texttt{4}} & \texttt{0100 1011}\\
+                     &            & \texttt{1110}\\
       \bottomrule
     \end{tabular}
   };
@@ -33,7 +36,9 @@
       \\
       \texttt{111X} & \texttt{N}\\
       \tikz[na]\node [coordinate] (e2) {};\texttt{110X} & \texttt{N} & \texttt{1100 1101} \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
+      \multirow{2}{*}{\texttt{XXXX}} &
+      \multirow{2}{*}{\texttt{4}} & \texttt{0100 1011}\\
+                     &            & \texttt{1110}\\
       \bottomrule
     \end{tabular}
   };
