@@ -332,47 +332,39 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   
   Consider the table:
 
-  \begin{table}[H]
+  \begin{figure}[H]
     \centering
-    \begin{tabular}{c l l}
-      \toprule
-      \textbf{\texttt{1100}} & \texttt{N} \\
-      \textbf{\texttt{1101}} & \texttt{N} \\
-      \textbf{\texttt{111X}} & \texttt{N} \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
+    \includegraphics{figures/downcheck_resolve_example_1}
+  \end{figure}
 
-  The first three entries cannot be merged because the merged entry (\mytt{11XX}) would be inserted above the bottom entry and would prevent packets with the key \mytt{1110} from being routed correctly.
-
-  To proceed we attempt to find bits which are \mytt{X}s in the merged entry but are not \mytt{X}s in the covered entry.
-  In this example this is the two rightmost bits, \mytt{11\underline{XX}} and \mytt{11\underline{10}} for the merged and covered entries respectively.
-  To resolve the covering we attempt to remove entries from the merge such that one of the \mytt{X}s we just identified becomes the opposite of the covered value in the same position.
-  In this example, we look to remove entries from the merge such that the merged entry is either \mytt{11\underline{X1}} or \mytt{11\underline{0X}}.
-
-  To `set' the entry resulting from the merge to \mytt{11X\underline{1}} we need to remove from the merge any entries with an \mytt{X} or \mytt{0} in the rightmost bit.
-  In this case removing the entries with the key-mask \mytt{110\underline{0}} and \mytt{111\underline{X}} is sufficient.
-  Alternatively, to set the entry resulting from the merge to \mytt{11\underline{0}X} we need to remove from the merge any entries with an \mytt{X} or \mytt{1} in the second rightmost bit.
-  This would entail removing the entry with the key-mask \mytt{111X} from the merge.
-
-  As we want to merge as many entries as possible we greedily select to remove the fewest number of entries from the merge.
-  The new merge candidate is then:
-
-  \begin{table}[H]
+  \noindent Our initial merge candidate, the first three entries, would become \mytt{11XX} and would be inserted above the bottom entry \emph{covering} \mytt{1110}, one of the entries' aliases, preventing it from being routed correctly.
+  We describe a simple iterative algorithm for refining the merge to eliminate the covering below.
+  
+  To resolve this ambiguity we must modify our merge by removing entries such that some \mytt{X} bits in the merged entry become \emph{fixed} to either \mytt{0} or \mytt{1}.
+  We first identify the groups of \mytt{X} bits which must be fixed to remove ambiguity as those which are \mytt{X}s in the merged entry but not in the covered entry.
+  In this example, either fixing the right-most bit as \mytt{1} (\mytt{11X1}) or fixing the next right-most bit as \mytt{0} (\mytt{110X}) is sufficient to disambiguate the merged entry from the covered entry.
+  
+  For each group of fixable bits we produce a new merge candidate with entries removed such that the required bits are fixed.
+  For example, to fix the right-most bit as \mytt{1} we must remove \mytt{110\underline{0}} and \mytt{111\underline{X}} from the merge candidate since the right-most bits of these entries cannot be merged into an entry with \mytt{1} on the right.
+  To fix the next right-most bit as \mytt{0} we must remove \mytt{11\underline{1}X} since this cannot be merged into an entry with a \mytt{0} in that bit.
+  
+  The new merge candidate with the fewest entries removed is then selected.
+  In our example, we remove \mytt{111X} from the merge candidate resulting in a new candidate:
+  
+  \begin{figure}[H]
     \centering
-    \begin{tabular}{c l l}
-      \toprule
-      \textbf{\texttt{1100}} & \texttt{N} \\
-      \textbf{\texttt{1101}} & \texttt{N} \\
-      \texttt{111X} & \texttt{N} \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-
-  Which would result in the new entry \mytt{110X} being inserted between \mytt{111X} and \mytt{XXXX}.
-  This merge does not result in any of its constituent entries becoming covered (rule 2a) and does not prevent any of the keys expected by lower entries from reaching them (rule 2b) and so the merge may proceed.
+    \includegraphics{figures/downcheck_resolve_example_2}
+  \end{figure}
+  
+  We now repeat the above process until either no entries are covered and a valid merge is produced.
+  If an ambiguity arises which cannot be resolved by removing entries from the merge the algorithm terminates and no merge is produced.
+  
+  In the example above, the new merge candidate results in an entry \mytt{110X} being inserted between the bottom two entries.
+  Since this merge does not cover any other entries in the table, the algorithm terminates.
+  
+  Note that in general some covered entries may require more than one bit to be fixed to disambiguate them.
+  It is likely that resolving ambiguities requiring may fixed bits will lead to many entries being removed from the merge candidate.
+  As an optimisation to reduce the number of merges candidates considered, we only repair the ambiguities with the fewest bits to be fixed in each iteration.
 
   \section{Results}
 

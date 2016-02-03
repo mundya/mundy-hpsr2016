@@ -17,8 +17,9 @@
     \begin{tabular}{c l r}
       \toprule
       \texttt{1100} & \texttt{N} &\tikz[na]\node [coordinate] (e0) {}; \\
-      \texttt{1101} & \texttt{N}\\
-      \texttt{111X} & \texttt{N} & \tikz[na]\node [coordinate] (e1) {}; \\
+      \texttt{1101} & \texttt{N} & \tikz[na]\node [coordinate] (e1) {}; \\
+      \texttt{111X} & \texttt{N}\\
+      \\
       \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
       \bottomrule
     \end{tabular}
@@ -30,18 +31,18 @@
       \toprule
       \\
       \\
-      \tikz[na]\node [coordinate] (e2) {};\texttt{11XX} & \texttt{N} & \texttt{1100 1101 111X} \\
+      \texttt{111X} & \texttt{N}\\
+      \tikz[na]\node [coordinate] (e2) {};\texttt{110X} & \texttt{N} & \texttt{1100 1101} \\
       \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
       \bottomrule
     \end{tabular}
   };
 
   % Add some arrows
-  \draw [red, thick, decoration={brace}, decorate] ([yshift=+1ex] e0) -- ([yshift=-.5ex] e1)
+  \draw [thick, decoration={brace}, decorate] ([yshift=+1ex] e0) -- ([yshift=-.5ex] e1)
     node [midway, coordinate] (merge) {};
-  \draw [red, thick, out=0, in=180, arrows={-Triangle[]}, shorten >=3pt] ([xshift=2pt] merge) to
-    node [pos=.4, cross out, draw=white, line width=4pt, minimum size=.75em, shorten >=0pt] {}
-    node [pos=.4, cross out, draw=red, ultra thick, minimum size=.75em, shorten >=0pt] {}
+  \draw [thick, out=0, in=180, arrows={-Triangle[]}, shorten >=3pt] ([xshift=2pt] merge) to
     (e2);
 \end{tikzpicture}
 \end{document}
+
