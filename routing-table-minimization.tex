@@ -225,7 +225,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   (e.g., \mytt{1010} and \mytt{0110} would be merged to produce \mytt{XX10}).
   A routing entry covers another when the set of keys matched by one entry intersects with those of another below it in the table.
 
-  We also annotate each entry in the table with the set of of keys that it is expected to match, the \textit{aliases} of the entry.
+  In addition, we annotate each entry in the table with the set of keys that it is expected to match, the \textit{aliases} of the entry.
   An empty aliases set simply means that the entry is expected to match all of the packets which would be matched by its key.
   For example, merging the first two entries in the following table would generate a new entry with the original keys listed as aliases:
 
@@ -349,7 +349,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \subsection{Resolving the down-check}
 
   The \textit{up-check} ensures that an entry, $e$, cannot -- through being merged with other entries -- become covered by being moved below another entry which matches a subset of the keys matched by $e$.
-  The \textit{down-check} instead ensures that the entry that would result from performing a merge would not match a subset of the packets expected to match entries below the point where the entry resulting from the merge would be located.
+  The \textit{down-check} instead ensures that the entry resulting from a merge would not match a subset of the packets expected to match entries below the point where the entry resulting from the merge would be located.
   
   For example, consider the table:\par\nopagebreak
   \begin{figure}[H]
