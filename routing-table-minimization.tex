@@ -141,9 +141,9 @@ Each core has a \SI{10}{\percent} chance of being connected to a single, distant
 Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets between cores.
 This algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables; however, for both our benchmarks the resulting routing tables were still too large to fit in the number of entries available (see \figurename~\ref{fig:results/espresso_no_dc}).
 
-Routing keys were assigned such that packets originating on the $p$th core of the chip at ($x$, $y$) in the skewed mesh used the two most significant bytes in the 32-bit key to represent the $x$ and $y$ co-ordinates and the following five bits to indicate the core ID, $p$.
+Routing keys were assigned such that packets originating on the $p$th core of the chip at $(x, y)$ in the skewed mesh used the two most significant bytes in the 32-bit key to represent the $x$ and $y$ co-ordinates and the following five bits to indicate the core ID, $p$.
 The remaining 11 bits of the key were left blank, i.e.,~\mytt{X} in the routing tables.
-This key assignation scheme, \textit{XYP-keys}, is common in SpiNNaker applications.
+This key assignation scheme, \textit{XYP}, is common in SpiNNaker applications.
 
 \textcite{Liu2002} presented a method for using Espresso-II~\parencite{Brayton1984} to minimize routing tables for IP routers.
 In this method a routing table is partitioned in subtables in which entries have equivalent routing destinations and prefix length.
@@ -375,7 +375,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   In our example, we wish to convert \mytt{11\underline{XX}} to either \mytt{11\underline{0}X} or \mytt{11X\underline{1}} by removing entries from the merge \mytt{\{11\underline{00}, 11\underline{01}, 11\underline{1X}\}}.
   To convert \mytt{11X\underline{X}} to \mytt{11X\underline{1}} we remove from the merge any entries with \mytt{X} or \mytt{0} in the rightmost bit position, in this instance we would remove \mytt{110\underline{0}} and \mytt{111\underline{X}} from the merge.
   Alternatively, to convert \mytt{11\underline{X}X} to \mytt{11\underline{0}X} we remove from the merge any entries with \mytt{X} or \mytt{1} in the indicated position, here we would need to remove only \mytt{11\underline{1}X}.
-  As a result of removing entries we have two new merge candidates:
+  As a result of removing entries we have two new merge candidates:\nopagebreak
   
   \begin{align*}
     \{\mbox{\mytt{1100}}, \mbox{\mytt{1101}}, \mbox{\mytt{111X}}\} -
@@ -399,27 +399,61 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \section{Results}
 
-  TODO:
+  \subsection{Compression}
+
   \begin{itemize}
-    \item Andrew has some memory results, but basically a 2048-entry table will fit in memory fine assuming the alias table is implemented sanely.
-    \item Algorithm is complex but effective; code fits in 13KiB
-    \item Something to do with timing (very quick results to grab)
-    \item Jonathan? Something about using multiple cores to minimise as far as necessary.
-    \item Andrew: resurrect circular convolution model?
+    \item OC performs well on given benchmarks
+    \item Achieves X PERCENT of Espresso compression, sufficient for Y PERCENT of tables in the centroid benchmark
   \end{itemize}
-  
-    \subsection{Hedging}
+
+  \subsection{Memory usage}
+
+  \begin{itemize}
+    \item Recording of OC memory usage?
+    \item Note that alias table growth outstrips memory saved from minimizing the table
+    \item Headline is that tables of useful sizes can be minimized within the memory and code-space available
+  \end{itemize}
+
+  \subsection{Timing}
+
+  \begin{itemize}
+    \item Cursory note about parallelism
+    \item Present load and minimize times for benchmarks, for full minimization and sufficient minimization
+  \end{itemize}
+
+  \subsection{Effect of key-allocation}
+
+  \begin{itemize}
+    \item Makes very little difference
+    \item Explain experiment, present largest table size for all schemes
+  \end{itemize}
+
+% \subsection{Hedging}
     
-       Each SpiNNaker chip has 18 processor cores and one routing table enabling parallel table minimisation approaches.
-       It is possible to execute several table minimisation algorithms simultaneously, terminating as soon as any algorithm produces a table which fits.
-       This approach may be valuable in cases where default routing is sufficient since these routes are very cheap to compute.
+% Each SpiNNaker chip has 18 processor cores and one routing table enabling parallel table minimisation approaches.
+% It is possible to execute several table minimisation algorithms simultaneously, terminating as soon as any algorithm produces a table which fits.
+% This approach may be valuable in cases where default routing is sufficient since these routes are very cheap to compute.
 
 \begin{figure*}
   \centering
   \includegraphics{experiments/results_esp_and_oc}
+  \caption{}
+  \label{fig:results/final}
 \end{figure*}
 
   \section{Conclusion}
+
+  \begin{itemize}
+    \item Routing table minimization a problem for SpiNNaker
+    \item Due to small table size, multicast and restricted DTCM existing solutions are insufficient
+    \item We introduced Ordered Covering; a memory-efficient order-exploiting routing table minimizer
+    \item HEADLINE RESULTS
+    \item Future worK:
+      \begin{itemize}
+        \item Alternative ways of selecting merge candidates may improve performance
+        \item Different heuristics for what makes a good merge?
+      \end{itemize}
+  \end{itemize}
 
 \printbibliography
 \end{document}
