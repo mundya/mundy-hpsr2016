@@ -322,14 +322,16 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \end{figure}
 
   \noindent Initially we could consider merging the first three entries.
-  Doing so, however, would mean that \mytt{0000} would be covered by \mytt{00XX} when merged into the new \mytt{XXX0} below so it must be removed from the merge, resulting in:
-
+  Doing so would mean that \mytt{0000} would be combined into the new entry \mytt{XXX0}, positioned below \mytt{00XX}.
+  However, \mytt{00XX} intersects with \mytt{0000}.
+  Moving \mytt{0000} below \mytt{00XX} by including it in the merge would change the behaviour of the routing table, hence \mytt{0000} may not be included in the merge.
+  After removing \mytt{0000} the, refined, merge is:\par\nopagebreak
   \begin{figure}[H]
     \centering
     \includegraphics{figures/upcheck_resolve_example_2}
   \end{figure}
 
-  \noindent Since the remaining entries in the merge candidate (\mytt{1000} and \mytt{1110}) are not covered, this merge obeys the up-check rule.
+  \noindent Since the remaining entries in the merge candidate (\mytt{1000} and \mytt{1110}) are not covered by \mytt{00XX} (the only entry between their current positions and the location where the merge is inserted), the refined merge obeys the up-check rule.
 
   \begin{codebox}
     \Procname{$\proc{Refine-Upcheck}(\id{merge}, \id{table})$}
