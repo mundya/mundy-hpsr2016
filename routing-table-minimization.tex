@@ -331,6 +331,21 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \noindent Since the remaining entries in the merge candidate (\mytt{1000} and \mytt{1110}) are not covered, this merge obeys the up-check rule.
 
+  \begin{codebox}
+    \Procname{$\proc{Refine-Upcheck}(\id{merge}, \id{table})$}
+    \li \For $e$ \kw{in} \id{merge}
+        \Do
+        \li \For $e_\mathrm{other}$ \kw{in} $\id{table}(e\twodots\id{merge}]$
+        \Do
+    \li \If $\proc{Intersect}(e, e_\mathrm{other})$
+        \Then
+    \li $\id{merge} \gets \id{merge} - e$
+    \li \kw{break}
+        \End
+        \End
+        \End
+  \end{codebox}
+
   \subsection{Resolving the down-check}
 
   The \textit{up-check} ensures that an entry, $e$, cannot -- through being merged with other entries -- become covered by being moved below another entry which matches a subset of the keys matched by $e$.
