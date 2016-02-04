@@ -1,6 +1,5 @@
 \documentclass[tikz]{standalone}
 \usepackage{booktabs}
-\usepackage{multirow}
 \usepackage{times}
 \usepackage{sourcecodepro}
 
@@ -15,39 +14,32 @@
 \begin{tikzpicture}
   % Original table
   \node (original) {
-    \begin{tabular}{c l l r}
+    \begin{tabular}{c l l}
       \toprule
-      \texttt{1100} & \texttt{N} & & \tikz[na]\node [coordinate] (e0) {}; \\
-      \texttt{1101} & \texttt{N} & & \tikz[na]\node [coordinate] (e1) {}; \\
-      \texttt{111X} & \texttt{N}\\
-      \\
-      \multirow{2}{*}{\texttt{XXXX}} &
-      \multirow{2}{*}{\texttt{4}} & \texttt{0100 1011}\\
-                     &            & \texttt{1110}\\
+      \tikz[na]\node [coordinate] (e0) {};\texttt{1100} & \texttt{N} \\
+      \tikz[na]\node [coordinate] (e1) {};\texttt{1101} & \texttt{N}\\
+      \texttt{111X} & \texttt{N} \\
+      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
       \bottomrule
     \end{tabular}
   };
 
   % Table after merging
-  \node (invalid) [right=1em of original] {
+  \node (invalid) [below=1em of original] {
     \begin{tabular}{c l l}
       \toprule
-      \\
-      \\
-      \texttt{111X} & \texttt{N}\\
+      \texttt{111X} & \texttt{N} \\
       \tikz[na]\node [coordinate] (e2) {};\texttt{110X} & \texttt{N} & \texttt{1100 1101} \\
-      \multirow{2}{*}{\texttt{XXXX}} &
-      \multirow{2}{*}{\texttt{4}} & \texttt{0100 1011}\\
-                     &            & \texttt{1110}\\
+      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
       \bottomrule
     \end{tabular}
   };
 
   % Add some arrows
-  \draw [thick, decoration={brace}, decorate] ([yshift=+1ex] e0) -- ([yshift=-.5ex] e1)
+  \draw [thick, decoration={brace}, decorate] ([xshift=-3pt, yshift=-.5ex] e1) --
+                                                   ([xshift=-3pt, yshift=+1ex] e0)
     node [midway, coordinate] (merge) {};
-  \draw [thick, out=0, in=180, arrows={-Triangle[]}, shorten >=3pt] ([xshift=2pt] merge) to
-    (e2);
+  \draw [thick, out=180, in=180, arrows={-Triangle[]}, shorten >=3pt] ([xshift=-2pt] merge) to (e2);
 \end{tikzpicture}
 \end{document}
 
