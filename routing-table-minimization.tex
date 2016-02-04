@@ -141,6 +141,10 @@ Each core has a \SI{10}{\percent} chance of being connected to a single, distant
 Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets between cores.
 This algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables; however, for both our benchmarks the resulting routing tables were still too large to fit in the number of entries available (see \figurename~\ref{fig:results/espresso_no_dc}).
 
+Routing keys were assigned such that packets originating on the $p$th core of the chip at ($x$, $y$) in the skewed mesh used the two most significant bytes in the 32-bit key to represent the $x$ and $y$ co-ordinates and the following five bits to indicate the core ID, $p$.
+The remaining 11 bits of the key were left blank, i.e.,~\mytt{X} in the routing tables.
+This key assignation scheme, \textit{XYP-keys}, is common in SpiNNaker applications.
+
 \textcite{Liu2002} presented a method for using Espresso-II~\parencite{Brayton1984} to minimize routing tables for IP routers.
 In this method a routing table is partitioned in subtables in which entries have equivalent routing destinations and prefix length.
 Each subtable is minimized using Espresso to produce a functionally equivalent but smaller set of entries.
