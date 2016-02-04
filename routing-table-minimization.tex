@@ -39,6 +39,9 @@
 % Force float positions in some cases
 \usepackage{float}
 
+% Better math environments
+\usepackage{amsmath}
+
 % Neaten the fixed-width font
 \usepackage{sourcecodepro}
 \newcommand{\mytt}[1]{\texttt{\footnotesize#1}}
@@ -329,42 +332,49 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \noindent Since the remaining entries in the merge candidate (\mytt{1000} and \mytt{1110}) are not covered, this merge obeys the up-check rule.
 
   \subsection{Resolving the down-check}
-  
-  Consider the table:
 
+  The \textit{up-check} ensures that an entry, $e$, cannot -- through being merged with other entries -- become covered by being moved below another entry which matches a subset of the keys matched by $e$.
+  The \textit{down-check} instead ensures that the entry that would result from performing a merge would not match a subset of the packets expected to match entries below the point where the entry resulting from the merge would be located.
+  
+  For example, consider the table:\par\nopagebreak
   \begin{figure}[H]
     \centering
     \includegraphics{figures/downcheck_resolve_example_1}
   \end{figure}
 
-  \noindent Our initial merge candidate, the first three entries, would become \mytt{11XX} and would be inserted above the bottom entry \emph{covering} \mytt{1110}, one of the entries' aliases, preventing it from being routed correctly.
-  We describe a simple iterative algorithm for refining the merge to eliminate the covering below.
+  \noindent Our initial merge candidate, the first three entries, would result in the insertion of the entry \mytt{11XX} immediately above the bottom entry.
+  However, \mytt{11XX} matches \mytt{1110}: one of the aliases of \mytt{XXXX}.
+  Consequently, merging the first three entries as indicated is not allowed as it changes the behaviour of the routing table.
+
+  Once we have identified that the entry resulting from a merge, $e_m$ (e.g., \mytt{11XX}), intersects with an entry lower in the table, $e_c$ (e.g., \mytt{1110}), we attempt to modify the merge to remove the intersection.
+  This may be achieved by converting one of the \mytt{X}s in $e_m$ so that it is the opposite of the bit in the same position in $e_c$.
+  In our example we look to convert either of the \mytt{X}s in \mytt{11XX} such that the new entry resulting from the merge, $e_m^\prime$, is either \mytt{11\underline{0}X} or \mytt{11X\underline{1}} -- neither of which intersect with \mytt{1110}, $e_c$.
   
-  To resolve this ambiguity we must modify our merge by removing entries such that some \mytt{X} bits in the merged entry become \emph{fixed} to either \mytt{0} or \mytt{1}.
-  We first identify the groups of \mytt{X} bits which must be fixed to remove ambiguity as those which are \mytt{X}s in the merged entry but not in the covered entry.
-  In this example, either fixing the right-most bit as \mytt{1} (\mytt{11X1}) or fixing the next right-most bit as \mytt{0} (\mytt{110X}) is sufficient to disambiguate the merged entry from the covered entry.
+  An \mytt{X} in the entry resulting from a merge may be converted to another value, $v$, by removing from the merge any entries which have either \mytt{X} or $\overline{v}$ in the given bit position.
+  In our example, we wish to convert \mytt{11\underline{XX}} to either \mytt{11\underline{0}X} or \mytt{11X\underline{1}} by removing entries from the merge \mytt{\{11\underline{00}, 11\underline{01}, 11\underline{1X}\}}.
+  To convert \mytt{11X\underline{X}} to \mytt{11X\underline{1}} we remove from the merge any entries with \mytt{X} or \mytt{0} in the rightmost bit position, in this instance we would remove \mytt{110\underline{0}} and \mytt{111\underline{X}} from the merge.
+  Alternatively, to convert \mytt{11\underline{X}X} to \mytt{11\underline{0}X} we remove from the merge any entries with \mytt{X} or \mytt{1} in the indicated position, here we would need to remove only \mytt{11\underline{1}X}.
+  As a result of removing entries we have two new merge candidates:
   
-  For each group of fixable bits we produce a new merge candidate with entries removed such that the required bits are fixed.
-  For example, to fix the right-most bit as \mytt{1} we must remove \mytt{110\underline{0}} and \mytt{111\underline{X}} from the merge candidate since the right-most bits of these entries cannot be merged into an entry with \mytt{1} on the right.
-  To fix the next right-most bit as \mytt{0} we must remove \mytt{11\underline{1}X} since this cannot be merged into an entry with a \mytt{0} in that bit.
+  \begin{align*}
+    \{\mbox{\mytt{1100}}, \mbox{\mytt{1101}}, \mbox{\mytt{111X}}\} -
+    \{\mbox{\mytt{1100}}, \mbox{\mytt{111X}}\} &= \{\mbox{\mytt{1101}}\} \\
+    \{\mbox{\mytt{1100}}, \mbox{\mytt{1101}}, \mbox{\mytt{111X}}\} -
+    \{\mbox{\mytt{111X}}\} &= \{\mbox{\mytt{1100}}, \mbox{\mytt{1101}}\}
+  \end{align*}
   
-  The new merge candidate with the fewest entries removed is then selected.
-  In our example, we remove \mytt{111X} from the merge candidate resulting in a new candidate:
-  
+  We select the merge candidate with the most remaining entries, resulting in:\par\nopagebreak
   \begin{figure}[H]
     \centering
     \includegraphics{figures/downcheck_resolve_example_2}
   \end{figure}
   
-  We now repeat the above process until either no entries are covered and a valid merge is produced.
-  If an ambiguity arises which cannot be resolved by removing entries from the merge the algorithm terminates and no merge is produced.
+  We repeat the above process until no entries are covered (that is $e_m$ does not intersect with any $e_c$) and a valid merge is produced or it is not possible to modify the merge to avoid intersecting a lower entry and the merge must be abandoned.
+  In our example, the new merge candidate results in an entry \mytt{110X} being inserted between the bottom two entries.
+  As this new entry does not cover any other entries in the table the algorithm terminates.
   
-  In the example above, the new merge candidate results in an entry \mytt{110X} being inserted between the bottom two entries.
-  Since this merge does not cover any other entries in the table, the algorithm terminates.
-  
-  Note that in general some covered entries may require more than one bit to be fixed to disambiguate them.
-  It is likely that resolving ambiguities requiring may fixed bits will lead to many entries being removed from the merge candidate.
-  As an optimisation to reduce the number of merges candidates considered, we only repair the ambiguities with the fewest bits to be fixed in each iteration.
+  In our example there were two bits in $e_m$, \mytt{11\underline{XX}}. which could be converted to avoid intersection with $e_c$.
+  This is not always the case; \textit{todo...}
 
   \section{Results}
 
