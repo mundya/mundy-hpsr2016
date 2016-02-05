@@ -401,10 +401,21 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \subsection{Compression}
 
-  \begin{itemize}
-    \item OC performs well on given benchmarks
-    \item Achieves X PERCENT of Espresso compression, sufficient for Y PERCENT of tables in the centroid benchmark
-  \end{itemize}
+\begin{figure*}
+  \centering
+  \includegraphics{experiments/results_esp_and_oc}
+  \caption{Compression performance of all the routing table minimization schemes for both benchmarks.
+           Ordered-Covering minimizes all of the tables in the locally-connected benchmark, and
+           \SI{48.6}{\percent} of the tables in the centroid benchmark, to $\le 1024$ entries.
+           }
+  \label{fig:results/final}
+\end{figure*}
+
+  \figurename~\ref{fig:results/final} shows the performance of Ordered-Covering, running on SpiNNaker, when used to minimize the benchmark routing tables.
+  While OC does not manage to minimize all of the tables in the centroid benchmark to fewer than 1024 entries it is able to reduce \SI{48.6}{\percent} of the tables to this size.
+  This roughly halves the number of tables which would otherwise need to be minimized off-chip.
+  OC reduces all of the tables in the locally-connected benchmark to fit in the router TCAM.
+
 
   \subsection{Memory usage}
 
@@ -426,13 +437,6 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 % Each SpiNNaker chip has 18 processor cores and one routing table enabling parallel table minimisation approaches.
 % It is possible to execute several table minimisation algorithms simultaneously, terminating as soon as any algorithm produces a table which fits.
 % This approach may be valuable in cases where default routing is sufficient since these routes are very cheap to compute.
-
-\begin{figure*}
-  \centering
-  \includegraphics{experiments/results_esp_and_oc}
-  \caption{}
-  \label{fig:results/final}
-\end{figure*}
 
   \section{Conclusion}
 
