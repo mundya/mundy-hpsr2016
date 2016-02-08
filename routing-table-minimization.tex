@@ -139,7 +139,7 @@ Each core has a \SI{10}{\percent} chance of being connected to a single, distant
 \end{figure}
 
 Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets across the network.
-While this algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables the resulting routing tables, of both our benchmarks, were too large to fit in the number of entries available (see \figurename~\ref{fig:results/espresso_no_dc}).
+While this algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables the resulting routing tables, of both our benchmarks, were too large to fit in the number of entries available (see \figurename~\ref{fig:results/final}).
 
 Routing keys were assigned such that packets originating on the $p$th core of the chip at $(x, y)$ in the skewed mesh used the two most significant bytes in the 32-bit key to represent the $x$ and $y$ co-ordinates and the following five bits to indicate the core ID, $p$.
 The remaining 11 bits of the key were left blank, i.e.,~\mytt{X} in the routing tables.
@@ -148,27 +148,9 @@ This key assignation scheme, \textit{XYP}, is common in SpiNNaker applications~\
 \textcite{Liu2002} presented a method for using Espresso-II~\parencite{Brayton1984} to minimize routing tables for IP routers.
 In this method a routing table is partitioned in subtables in which entries have equivalent routing destinations and prefix length.
 Each subtable is minimized using Espresso to produce a functionally equivalent but smaller set of entries.
-\figurename~\ref{fig:results/espresso_no_dc} shows the result of applying this technique to the routing tables from our benchmarks once entries which could be replaced by default routing were removed.
+\figurename~\ref{fig:results/final} shows the result of applying this technique to the routing tables from our benchmarks once entries which could be replaced by default routing were removed.
 In the case of the `locally-connected' benchmark a combination of default routing and logic minimization is able to reduce the majority, but not all, of the 144 routing tables to fewer than \num{1024}~entries.
 In the more challenging centroid model this technique is unable to reduce any tables to fit within the TCAM constraint.
-
-\begin{figure}
-  \centering
-  \includegraphics{experiments/results_no_dc}
-  \caption{
-    Distributions of routing table sizes for the locally-connected and centroid benchmarks.
-    Neither default routing nor minimisation is sufficient to minimize the majority of tables in either benchmark sufficiently to fit within the 1024-entry limit required by SpiNNaker.}
-  \label{fig:results/espresso_no_dc}
-\end{figure}
-
-\begin{figure*}[!t]
-  \centering
-  \includegraphics{experiments/results_with_esp_dc_and_mtrie}
-  \caption{
-    Distributions of routing table sizes for the locally-connected and centroid benchmarks for exact and order-exploiting use of Espresso and m-Trie.
-  }
-  \label{fig:results/espresso_with_dc_and_mtrie}
-\end{figure*}
 
 In contrast to the unicast IP routing tables at which minimization is normally targeted SpiNNaker routing tables are multicast.
 Consequently, there are two factors which may explain the poor compression ratios achieved by the above technique when applied to SpiNNaker routing tables.
@@ -207,7 +189,7 @@ However, unlike the technique proposed by \textcite{Liu2002}, we allowed Espress
 The minimized table depends on TCAM ordering to ensure that it is functionally equivalent to the original.
 We call this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
 
-\figurename~\ref{fig:results/espresso_with_dc_and_mtrie} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
+\figurename~\ref{fig:results/final} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
 
 \subsection*{On-chip logic minimization}
 
@@ -218,7 +200,7 @@ Minimization on this scale is an `embarrassingly'-parallel problem, and the wall
 Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of data tightly-coupled memory (DTCM) and \SI{32}{\kibi\byte} of instruction tightly-coupled memory (ITCM).
 This places severe limitations on the programs which they may execute.
 While we have shown that Espresso may be used to perform order-exploiting minimization for use with SpiNNaker, its memory usage and code size preclude its use on embedded systems~\parencite{Lysecky2003}.
-In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required (see \figurename~\ref{fig:results/espresso_with_dc_and_mtrie}).
+In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required (see \figurename~\ref{fig:results/final}).
 
 \section{Ordered-Covering}
 
@@ -418,8 +400,8 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   If the space saved by minimizing the routing table were reclaimed (by using a bucket allocator, for example) then any merge of more than ten entries would reduce the memory required to represent the routing and the aliases tables.
 
   Our implementation of Ordered-Covering does not reclaim the memory saved by reducing the size of a routing table, meaning that the routing table remains a constant size while the aliases table grows with every merge.
-  We found that the peak heap usage of our minimizer when running on SpiNNaker was \SI{17.9}{\kibi\byte} for the locally-connected benchmark (of which \SI{13.34}{\kibi\byte} was used to represent the routing table) and \SI{18.7}{\kibi\byte} for the centroid model (of which \SI{14.0}{\kibi\byte} was required for the routing table).
-  Ordered-Covering is thus able to achieve good levels of table compression for very little memory above the cost of representing the routing table.
+  The peak heap usage of our minimizer when running on SpiNNaker was \SI{17.9}{\kibi\byte} for the locally-connected benchmark (of which \SI{13.3}{\kibi\byte} was used to represent the routing table) and \SI{18.7}{\kibi\byte} for the centroid model (\SI{14.0}{\kibi\byte} for the routing table).
+  Ordered-Covering is thus able to achieve good levels of table compression for very little memory cost above that required to represent the routing table.
 
   \subsection{Timing}
 
