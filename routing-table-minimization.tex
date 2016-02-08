@@ -205,7 +205,7 @@ Next the subtables are ordered in increasing order of the number of entries they
 Finally, the minimization procedure from Espresso is applied.
 However, unlike the technique proposed by \textcite{Liu2002}, we provide Espresso with the set of all entries contained in lower subtables as the OFF-set.
 Consequently each subtable is minimized such that the compressed result matches a superset of keys matched by the original and may match any other keys \textit{not} matched in lower subtables.
-The minimized table exploits TCAM ordering to ensure that a routing keys match the correct entries.
+The minimized table exploits TCAM ordering to ensure that all routing keys match the correct entries.
 We call this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
 
 \figurename~\ref{fig:results/espresso_with_dc_and_mtrie} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
@@ -286,7 +286,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
       \end{enumerate}
   \end{enumerate}
 
-  A simple, greedy, algorithm for minimize a routing tables according to these rules is thus:\par\nopagebreak
+  A simple, greedy, algorithm to minimize a routing table according to these rules is:\par\nopagebreak
   \begin{codebox}
     \Procname{$\proc{Minimize}(\id{table}, \id{target})$}
     \li \While $\attrib{table}{length} >  \id{target}$
@@ -302,7 +302,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \begin{itemize}
     \item $\id{table}$ is a routing table that is sorted according to rule~(1)
     \item $\proc{Get-Largest-Merge}$ is a function which returns a (possibly empty) set of routing table entries which may be merged without breaking the up- or down-check rules~(2)
-    \item $\proc{Apply-Merge}$ merges the set of routing entries and uses rule~(1) to determine where the new entry
+    \item $\proc{Apply-Merge}$ merges the set of routing entries and uses rule~(1) to determine where the new entry should be inserted into the table
   \end{itemize}
 
   The algorithm terminates early if $\attrib{table}{length} \le \id{target}$ which can save a large amount of time in comparison to fully minimizing the table.
@@ -428,8 +428,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   After the routing table, the aliases table -- which annotates routing table entries with the keys they are expected to match -- is the most expensive structure in Ordered-Covering.
   Other structures, such as sets of entries being considered as merge candidates can be implemented using bit-vectors and consume very little memory -- e.g., \SI{256}{\byte} for a 2048-entry table.
 
-  Each merge of $n$ entries performed by Ordered-Covering reduces the size of the routing table by $n-1$ entries and adds a new entry into the aliases table.
-  Each merge of $n$ entries reduces the amount of memory required to represent the table by $3(n-1)$~words.
+  Each merge of $n$ entries performed by Ordered-Covering reduces the size of the routing table by $n-1$ entries (reducing the memory required to represent the table by $3(n-1)$~words) and adds a new entry into the aliases table.
   In our implementation of the aliases table, which uses AA-trees and linked-lists of fixed-size blocks, a merge of $n$ entries will increase the memory required by the aliases table by $2(n + 1) + 4$~words.
   Consequently, the total memory cost of a merge of $n$ entries is $2(n + 1) + 4 - 3(n - 1)$~words.
   If the space saved by minimizing the routing table could be reclaimed (by using a bucket allocator, for example) then any merge of more than ten entries will reduce the memory required to represent the routing and the aliases tables.
