@@ -3,11 +3,49 @@ tables.
 """
 import argparse
 import common
+import numpy as np
 from rig.machine_control import MachineController
 from rig.routing_table import RoutingTableEntry, Routes
 from six import iteritems, iterkeys, itervalues
 import struct
 import time
+
+
+def get_memory_profile(mc):
+    """Return the cumulative heap usage over time."""
+    # Keep a track of how much memory is associated with each pointer,
+    # track cumulative memory usage over time
+    usage = [0]
+    pointers = dict()
+
+    # Read the linked list of entry arrays
+    buf = mc.read_vcpu_struct_field("user0")
+    while buf != 0x0:
+        # Read back the data
+        data = mc.read(buf, 8 + 2048*8)
+
+        # Unpack the header
+        n_entries, buf_next = struct.unpack_from("<2I", data)
+
+        # Read in the memory recording entries
+        alloc_data = np.ndarray(
+            shape=(n_entries, 2),
+            dtype=np.uint32,
+            buffer=data[8:8 + n_entries*8]
+        )
+        for n_bytes, ptr in alloc_data[:]:
+            if n_bytes == 0:
+                # This is a free
+                usage.append(usage[-1] - pointers.pop(ptr))
+            else:
+                # This is an allocation
+                usage.append(usage[-1] + n_bytes)
+                pointers[ptr] = n_bytes
+
+        # Progress to the next block of memory
+        buf = buf_next
+
+    return np.array(usage, dtype=np.uint32)
 
 
 def pack_table(table, target_length):
@@ -42,7 +80,7 @@ def unpack_table(data):
     length, _ = struct.unpack_from("<2I", data)
 
     # Unpack the table
-    table = [None for _ in range(length)]
+    table = [None for __ in range(length)]
     for i in range(length):
         key, mask, route = struct.unpack_from("<3I", data, i*12 + 8)
         routes = {r for r in Routes if (1 << r) & route}
@@ -57,6 +95,7 @@ if __name__ == "__main__":
     parser.add_argument("routing_table")
     parser.add_argument("out_file")
     parser.add_argument("target_length", type=int, default=0, nargs='?')
+    parser.add_argument("--memory-profile", type=str)
     args = parser.parse_args()
 
     # Load and minimise all routing tables
@@ -91,12 +130,16 @@ if __name__ == "__main__":
 
     # Load the application
     print("Loading application...")
-    mc.load_application("./ordered_covering.aplx", targets)
+    if args.memory_profile is None:
+        mc.load_application("./ordered_covering.aplx", targets)
+    else:
+        mc.load_application("./ordered_covering_profiled.aplx", targets)
     t = time.time()
 
     # Wait until this does something interesting
     print("Minimising...")
-    ready = mc.wait_for_cores_to_reach_state("exit", len(uncompressed), timeout=60.0)
+    ready = mc.wait_for_cores_to_reach_state("exit", len(uncompressed),
+                                             timeout=60.0)
     if ready < len(uncompressed):
         raise Exception("Something didn't work...")
     run_time = time.time() - t
@@ -114,7 +157,19 @@ if __name__ == "__main__":
     with open(args.out_file, "wb+") as f:
         common.dump_routing_tables(f, compressed)
 
-    print({chip: len(table) for chip, table in iteritems(compressed)})
+    # Get the memory profile
+    if args.memory_profile is not None:
+        print("Reading back memory usage...")
+        # Get the data
+        memory = dict()
+        for x, y in iterkeys(targets):
+            with mc(x=x, y=y, p=1):
+                memory[(x, y)] = get_memory_profile(mc)
+
+        # Dump to file
+        print("Dumping to file...")
+        with open(args.memory_profile, "wb+") as fp:
+            common.dump_memory_profile(fp, memory)
 
     # Tidy up
     mc.send_signal("stop")

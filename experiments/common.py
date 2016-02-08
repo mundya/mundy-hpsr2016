@@ -5,9 +5,47 @@ are the x and y co-ordinate the table relates to, the following short is the
 length of the table. Following the header there are 4 words for each entry:
 key, mask, source and route.
 """
+import numpy as np
 from rig.routing_table import RoutingTableEntry, Routes
 from six import iteritems
 import struct
+
+
+def dump_memory_profile(fp, profile):
+    """Dump the memory profile to a file.
+
+    File is formatted as entries of::
+
+       x : 1 byte
+       y : 1 byte
+       padding : 2 bytes
+       n_entries : 4 bytes
+       memory usage : 4 bytes per entry.
+    """
+    for (x, y), entries in iteritems(profile):
+        fp.write(struct.pack('<2B2xI', x, y, len(entries)))
+        fp.write(bytes(entries.data))
+
+
+def read_memory_profile(fp):
+    """Read memory profiles from a file."""
+    profile = dict()
+
+    data = fp.read()
+    offset = 0
+    while offset < len(data):
+        x, y, n_entries = struct.unpack_from("<2B2xI", data, offset)
+        offset += 8
+
+        # Read the entries into a Numpy array
+        profile[(x, y)] = np.ndarray(
+            shape=n_entries,
+            dtype=np.uint32,
+            buffer=data[offset:offset + n_entries*4]
+        )
+        offset += n_entries * 4
+
+    return profile
 
 
 def dump_routing_tables(fp, tables):
