@@ -70,10 +70,10 @@ To resolve these issues we present a new algorithm which exploits the ordered na
 
 SpiNNaker~\parencite{Furber2014} is a purpose-built supercomputer intended to facilitate the simulation of large biological neural networks.
 Software models are distributed across a network of processors which communicate by passing (short) messages.
-Biological neurons in a brain typically have a `fanout' of the order of thousands and SpiNNaker's interconnection structure reflects this in that it supports multicasting network packets to an arbitrary set of destinations.
+Neurons in the brain typically have a `fanout' of the order of thousands \parencite{TODO} and SpiNNaker's interconnection structure reflects this in that it supports multicasting network packets to an arbitrary set of destinations.
 
-SpiNNaker comprises custom silicon where each chip has a single router capable of steering packets to or from the 18~on-chip processor cores and inter-chip links.
-The inter-chip network is intended to be a triangularly connected 2D surface, nominally wrapped into a torus to provide greater aggregate bandwidth.
+Each SpiNNaker chip has a single router capable of steering packets to or from the 18~on-chip processor cores and inter-chip links.
+The inter-chip network is a triangularly connected 2D surface, which may be wrapped into a torus to provide greater aggregate bandwidth.
 This can be drawn as a hexagonal mesh but is sometimes more conveniently pictured skewed into squares.
 The six inter-chip links are typically labelled with compass points (\figurename~\ref{fig:diagrams/topology}).
 
@@ -87,11 +87,11 @@ The six inter-chip links are typically labelled with compass points (\figurename
   
 \end{figure}
 
-Routing these packets is done by Address Event Representation (AER)~\parencite{Boahen2000}; each packet contains a routing key which identifies its source and routers forward (and may duplicate) packets towards their destination(s).
-SpiNNaker uses 32-bit routing keys which reflects the intended scale of the system: $\sim2^{16}$ SpiNNaker chips carry $\sim10^6$ processors or $\sim10^9 (\approx 2^{30})$ neurons, each of which must be uniquely identified.
-Routers use a Ternary Content Addressable Memory (TCAM) to decide how to route incoming packets which bit-mask keys before looking for particular matches.
-This means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \mytt{X} (`don't care').
-In addition the TCAM is is prioritised such that only the first-found match will be returned and this allows `catch all' entries to be inserted near the bottom of the table.
+Packets are routed around this network by Address Event Representation (AER)~\parencite{Boahen2000}; each packet contains a routing key which identifies its source and routers forward (and may duplicate) packets towards their destination(s).
+SpiNNaker uses 32-bit routing keys, which reflect the intended scale of the system.
+Packets are recognised using a Ternary Content Addressable Memory (TCAM) which bit-masks keys before looking for particular matches,
+this means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \mytt{X} (`don't care').
+In addition the TCAM is prioritised such that only the first-found match will be returned, allowing `catch all' entries to be inserted near the bottom of the table.
 Finally, if a key is not found in the table, the packet is `default routed' continuing in the direction it arrived (e.g., an unrecognised packet arriving via the East link is default routed out of the West link).
 
 For example, given a simplified routing table with 4-bit keys
@@ -109,10 +109,10 @@ For example, given a simplified routing table with 4-bit keys
   \end{tabular}
 \end{table}
 
-\noindent any packets with the keys \mytt{0111} or \mytt{1111} would match the second entry in the table and would be routed out of the South link.
+\noindent any packets with the keys \mytt{0111} or \mytt{1111} would match the second entry in the table and be routed out of the South link.
 Packets with the key \mytt{0000} would instead match only the first entry and would be routed out of both the North East and North links.
-Other packets beginning with a \mytt{1} would match the last entry and would be routed to the indicated processing cores.
-All other packets would be unrecognised by the router and would be default routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
+Other packets beginning with a \mytt{1} would match the last entry and be routed to the indicated processing cores.
+All other packets would be unrecognised by the router and be default routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
 
 The TCAM was chosen with an arbitrary size of \num{1024}~entries, believed large enough for most applications although making entries quite precious.
 Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' routes.
@@ -123,7 +123,7 @@ As the largest SpiNNaker machine will consist of \num{57600}~chips, and the same
 To indicate the importance of routing table minimization to SpiNNaker we constructed two benchmark networks.
 In the first of these networks each processing core in a 144-chip system is connected to every other core in the system with a probability determined by the distance between the cores.
 In our model the probability of there being a connection between two cores is given by $\frac{1}{2}\exp(-0.65d)$ where $d$ is the number of hops in the shortest path between the cores.
-This benchmark models networks in which processing cores are strongly connected to their neighbours but are weakly connected to distant chips.
+This benchmark models networks in which processing cores are strongly connected to their neighbours but are weakly connected to distant chips \textbf{EXAMPLE AND REFERENCE}.
 
 The second benchmark extends the first benchmark by adding a number of longer distance connections to the network and is based on the `centroid' model of \textcite{Navaridas2015}.
 In this model a small number of cores are connected to a group of cores located at some distance across the machine.
@@ -138,12 +138,12 @@ Each core has a \SI{10}{\percent} chance of being connected to a single, distant
   \label{fig:experiment/setup}
 \end{figure}
 
-Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets between cores.
-This algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables; however, for both our benchmarks the resulting routing tables were still too large to fit in the number of entries available (see \figurename~\ref{fig:results/espresso_no_dc}).
+Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets across the network.
+While this algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables the resulting routing tables, of both our benchmarks, were too large to fit in the number of entries available (see \figurename~\ref{fig:results/espresso_no_dc}).
 
 Routing keys were assigned such that packets originating on the $p$th core of the chip at $(x, y)$ in the skewed mesh used the two most significant bytes in the 32-bit key to represent the $x$ and $y$ co-ordinates and the following five bits to indicate the core ID, $p$.
 The remaining 11 bits of the key were left blank, i.e.,~\mytt{X} in the routing tables.
-This key assignation scheme, \textit{XYP}, is common in SpiNNaker applications.
+This key assignation scheme, \textit{XYP}, is common in SpiNNaker applications~\parencite{Davies2012}.
 
 \textcite{Liu2002} presented a method for using Espresso-II~\parencite{Brayton1984} to minimize routing tables for IP routers.
 In this method a routing table is partitioned in subtables in which entries have equivalent routing destinations and prefix length.
@@ -171,8 +171,8 @@ In the more challenging centroid model this technique is unable to reduce any ta
 \end{figure*}
 
 In contrast to the unicast IP routing tables at which minimization is normally targeted SpiNNaker routing tables are multicast.
-Consequently, there are two factors which may explain the poor compression ratios achieved by use of the above technique when applied to SpiNNaker routing tables.
-Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output ports, each SpiNNaker router has the equivalent of up to $2^{24} - 1$ unique routes -- consequently the number of entries with equivalent routes can be expected to be much smaller.
+Consequently, there are two factors which may explain the poor compression ratios achieved by the above technique when applied to SpiNNaker routing tables.
+Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output ports, each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes -- consequently the number of entries with equivalent routes can be expected to be much smaller.
 Secondly, whereas IP addresses are assigned such that very coarse routing decisions may be made from very few bits, multicasting potentially reduces the amount of mutual information between keys which describe similar routes since keys are related to route origins not destinations.
 
 \subsection*{``Order-exploiting'' minimization}
@@ -199,21 +199,20 @@ In IP routing tables, which are considerably larger than those in SpiNNaker and 
 and (b) slow down the process of updating the table to deal with changed routes.
 However, in the case of SpiNNaker -- and other systems with largely static routing tables and very tight constraints on entries -- this technique can allow for significant reductions in table size.
 
-We extended the technique of \textcite{Liu2002} to investigate the effect of this style of minimization on our benchmark networks.
-First, each routing table is split into subtables of entries with the same route.
-Next the subtables are ordered in increasing order of the number of entries they contain; that is: smaller subtables are moved to the top of the routing table and larger ones toward the bottom.
-Finally, the minimization procedure from Espresso is applied.
-However, unlike the technique proposed by \textcite{Liu2002}, we provide Espresso with the set of all entries contained in lower subtables as the OFF-set.
-Consequently each subtable is minimized such that the compressed result matches a superset of keys matched by the original and may match any other keys \textit{not} matched in lower subtables.
-The minimized table exploits TCAM ordering to ensure that a routing keys match the correct entries.
+We extended the technique of \textcite{Liu2002} to investigate the effect of this on our benchmark networks.
+First, each routing table was split into subtables of entries with the same route.
+Next the subtables were sorted such that subtables with fewer entries were moved to the top of the routing table and larger ones toward the bottom.
+Finally, the minimization procedure from Espresso was applied to each subtable in turn.
+However, unlike the technique proposed by \textcite{Liu2002}, we allowed Espresso to generate entries which matched a superset of keys matched by the original entry provided that they did not match keys expected to match entries in lower subtables.
+The minimized table depends on TCAM ordering to ensure that it is functionally equivalent to the original.
 We call this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
 
 \figurename~\ref{fig:results/espresso_with_dc_and_mtrie} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
 
 \subsection*{On-chip logic minimization}
 
-Espresso is capable of very rapidly minimizing routing tables of the scale shown in our benchmarks.
-However, as projected SpiNNaker machines are expected to consist of nearly sixty-thousand chips, and the same number of routing tables, the  compute time required to minimize all tables is likely to be significant.
+Espresso is capable of rapidly minimizing routing tables of the scale shown in our benchmarks, for example \textbf{TIMING FOR SINGLE TABLE}.
+However, as projected SpiNNaker machines are expected to consist of nearly sixty-thousand chips, and the same number of routing tables, the  compute time required to minimize all tables is likely to be significant, \textbf{FOR EXAMPLE SEVERAL HOURS}.
 Minimization on this scale is an `embarrassingly'-parallel problem, and the wall-clock time required to perform this task for SpiNNaker may be significantly reduced by performing the minimization directly on the chips to which the routing tables relate.
 
 Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of data tightly-coupled memory (DTCM) and \SI{32}{\kibi\byte} of instruction tightly-coupled memory (ITCM).
@@ -224,7 +223,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 \section{Ordered-Covering}
 
   We present a novel algorithm called ``Ordered-Covering'' which is capable of performing order-exploiting routing table minimization within the small memory and code-space available on SpiNNaker.
-  The algorithm proceeds by sequentially \textit{merging} sets of routing table entries with the same output ports while ensuring these merged entries do not \textit{cover} existing entries. 
+  The algorithm proceeds by sequentially \textit{merging} sets of routing table entries with the same output routes while ensuring these merged entries do not \textit{cover} existing entries. 
   A set of routing entries is merged by replacing them with one new entry containing only the bits common to all the original entries and \mytt{X}s for all other bits
   (e.g., \mytt{1010} and \mytt{0110} would be merged to produce \mytt{XX10}).
   A routing entry covers another when the set of keys matched by one entry intersects with those of another below it in the table.
@@ -276,7 +275,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
         \item Secondly, new entries must be inserted below existing entries of equivalent generality.
               For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted below it.
       \end{enumerate}
-    \item The only merges are only allowed are those which would not:
+    \item The only merges allowed are those which would not:
       \begin{enumerate}[\IEEEsetlabelwidth{b)}]
         \item cause any entry in the merge to become \textit{covered} by an entry higher up the table.
               This rule is referred to as the \textit{up-check} rule.
@@ -327,8 +326,8 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \noindent Initially we could consider merging the first three entries.
   Doing so would mean that \mytt{0000} would be combined into the new entry \mytt{XXX0}, positioned below \mytt{00XX}.
-  However, \mytt{00XX} intersects with \mytt{0000}.
-  Moving \mytt{0000} below \mytt{00XX} by including it in the merge would change the behaviour of the routing table, hence \mytt{0000} may not be included in the merge.
+  However, \mytt{00XX} would cover then \mytt{0000}.
+  As moving \mytt{0000} below \mytt{00XX} by including it in the merge would change the behaviour of the routing table, \mytt{0000} may not be included in the merge.
   After removing \mytt{0000} the, refined, merge is:\par\nopagebreak
   \begin{figure}[H]
     \centering
@@ -336,21 +335,6 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \end{figure}
 
   \noindent Since the remaining entries in the merge candidate (\mytt{1000} and \mytt{1110}) are not covered by \mytt{00XX} (the only entry between their current positions and the location where the merge is inserted), the refined merge obeys the up-check rule.
-
-  \begin{codebox}
-    \Procname{$\proc{Refine-Upcheck}(\id{merge}, \id{table})$}
-    \li \For $e$ \kw{in} \id{merge}
-        \Do
-        \li \For $e_\mathrm{other}$ \kw{in} $\id{table}(e\twodots\id{merge}]$
-        \Do
-    \li \If $\proc{Intersect}(e, e_\mathrm{other})$
-        \Then
-    \li $\id{merge} \gets \id{merge} - e$
-    \li \kw{break}
-        \End
-        \End
-        \End
-  \end{codebox}
 
   \subsection{Resolving the down-check}
 
@@ -367,9 +351,9 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   However, \mytt{11XX} matches \mytt{1110}: one of the aliases of \mytt{XXXX}.
   Consequently, merging the first three entries as indicated is not allowed as it changes the behaviour of the routing table.
 
-  Once we have identified that the entry resulting from a merge, $e_m$ (e.g., \mytt{11XX}), intersects with an entry lower in the table, $e_c$ (e.g., \mytt{1110}), we attempt to modify the merge to remove the intersection.
+  Once we have identified that the entry resulting from a merge, $e_m$ (e.g., \mytt{11XX}), covers an entry lower in the table, $e_c$ (e.g., \mytt{1110}), we attempt to modify the merge to avoid the covering.
   This may be achieved by converting one of the \mytt{X}s in $e_m$ so that it is the opposite of the bit in the same position in $e_c$.
-  In our example we look to convert either of the \mytt{X}s in \mytt{11XX} such that the new entry resulting from the merge, $e_m^\prime$, is either \mytt{11\underline{0}X} or \mytt{11X\underline{1}} -- neither of which intersect with \mytt{1110}, $e_c$.
+  In our example we look to convert either of the \mytt{X}s in \mytt{11XX} such that the new entry resulting from the merge, $e_m^\prime$, is either \mytt{11\underline{0}X} or \mytt{11X\underline{1}} -- neither of which would cover \mytt{1110}, $e_c$.
   
   An \mytt{X} in the entry resulting from a merge may be converted to another value, $v$, by removing from the merge any entries which have either \mytt{X} or $\overline{v}$ in the given bit position.
   In our example, we wish to convert \mytt{11\underline{XX}} to either \mytt{11\underline{0}X} or \mytt{11X\underline{1}} by removing entries from the merge \mytt{\{11\underline{00}, 11\underline{01}, 11\underline{1X}\}}.
@@ -390,7 +374,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \includegraphics{figures/downcheck_resolve_example_2}
   \end{figure}
   
-  We repeat the above process until no entries are covered (that is $e_m$ does not intersect with any $e_c$) and a valid merge is produced or it is not possible to modify the merge to avoid intersecting a lower entry and the merge must be abandoned.
+  We repeat the above process until either no entries are covered (that is $e_m$ does not cover any $e_c$) and a valid merge is produced; or it is not possible to modify the merge to avoid covering a lower entry and the merge must be abandoned.
   In our example, the new merge candidate results in an entry \mytt{110X} being inserted between the bottom two entries.
   As this new entry does not cover any other entries in the table the algorithm terminates.
   
@@ -425,17 +409,17 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   On-chip routing table minimization is required to work with very small amounts of working memory.
   In order-exploiting minimization this small amount of memory must be used to store the whole routing table -- e.g., \SI{24}{\kibi\byte} for a 2048-entry table -- and any additional structures.
   Consequently, those additional structures must be memory efficient.
-  After the routing table, the aliases table -- which annotates routing table entries with the keys they are expected to match -- is the most expensive structure in Ordered-Covering.
-  Other structures, such as sets of entries being considered as merge candidates can be implemented using bit-vectors and consume very little memory -- e.g., \SI{256}{\byte} for a 2048-entry table.
+  After the routing table, the aliases table (which annotates routing table entries with the keys they are expected to match) is the most expensive structure in Ordered-Covering.
+  Other structures, such as sets of entries being considered as merge candidates can be implemented using bit-vectors and consume very little memory.
 
   Each merge of $n$ entries performed by Ordered-Covering reduces the size of the routing table by $n-1$ entries and adds a new entry into the aliases table.
   Each merge of $n$ entries reduces the amount of memory required to represent the table by $3(n-1)$~words.
   In our implementation of the aliases table, which uses AA-trees and linked-lists of fixed-size blocks, a merge of $n$ entries will increase the memory required by the aliases table by $2(n + 1) + 4$~words.
   Consequently, the total memory cost of a merge of $n$ entries is $2(n + 1) + 4 - 3(n - 1)$~words.
-  If the space saved by minimizing the routing table could be reclaimed (by using a bucket allocator, for example) then any merge of more than ten entries will reduce the memory required to represent the routing and the aliases tables.
+  If the space saved by minimizing the routing table were reclaimed (by using a bucket allocator, for example) then any merge of more than ten entries would reduce the memory required to represent the routing and the aliases tables.
 
-  Our implementation of Ordered-Covering does not currently reclaim the memory saved by reducing the size of a routing table.
-  However, we found that the peak heap usage of our minimizer when running on SpiNNaker was \SI{17.9}{\kibi\byte} for the locally-connected benchmark (of which \SI{13.34}{\kibi\byte} was used to represent the routing table) and \SI{18.7}{\kibi\byte} for the centroid model (of which \SI{14.0}{\kibi\byte} was required for the routing table).
+  Our implementation of Ordered-Covering does not reclaim the memory saved by reducing the size of a routing table, meaning that the routing table remains a constant size while the aliases table grows with every merge.
+  We found that the peak heap usage of our minimizer when running on SpiNNaker was \SI{17.9}{\kibi\byte} for the locally-connected benchmark (of which \SI{13.34}{\kibi\byte} was used to represent the routing table) and \SI{18.7}{\kibi\byte} for the centroid model (of which \SI{14.0}{\kibi\byte} was required for the routing table).
   Ordered-Covering is thus able to achieve good levels of table compression for very little memory above the cost of representing the routing table.
 
   \subsection{Timing}
