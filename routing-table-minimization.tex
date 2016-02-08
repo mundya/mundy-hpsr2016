@@ -419,11 +419,24 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \subsection{Memory usage}
 
-  \begin{itemize}
-    \item Recording of OC memory usage?
-    \item Note that alias table growth outstrips memory saved from minimizing the table
-    \item Headline is that tables of useful sizes can be minimized within the memory and code-space available
-  \end{itemize}
+% Gaussian: 18376 bytes of which 13668 bytes is the table
+% Centroid: 19152 bytes of which 14328 bytes is the table
+
+  On-chip routing table minimization is required to work with very small amounts of working memory.
+  In order-exploiting minimization this small amount of memory must be used to store the whole routing table -- e.g., \SI{24}{\kibi\byte} for a 2048-entry table -- and any additional structures.
+  Consequently, those additional structures must be memory efficient.
+  After the routing table, the aliases table -- which annotates routing table entries with the keys they are expected to match -- is the most expensive structure in Ordered-Covering.
+  Other structures, such as sets of entries being considered as merge candidates can be implemented using bit-vectors and consume very little memory -- e.g., \SI{256}{\byte} for a 2048-entry table.
+
+  Each merge of $n$ entries performed by Ordered-Covering reduces the size of the routing table by $n-1$ entries and adds a new entry into the aliases table.
+  Each merge of $n$ entries reduces the amount of memory required to represent the table by $3(n-1)$~words.
+  In our implementation of the aliases table, which uses AA-trees and linked-lists of fixed-size blocks, a merge of $n$ entries will increase the memory required by the aliases table by $2(n + 1) + 4$~words.
+  Consequently, the total memory cost of a merge of $n$ entries is $2(n + 1) + 4 - 3(n - 1)$~words.
+  If the space saved by minimizing the routing table could be reclaimed (by using a bucket allocator, for example) then any merge of more than ten entries will reduce the memory required to represent the routing and the aliases tables.
+
+  Our implementation of Ordered-Covering does not currently reclaim the memory saved by reducing the size of a routing table.
+  However, we found that the peak heap usage of our minimizer when running on SpiNNaker was \SI{17.9}{\kibi\byte} for the locally-connected benchmark (of which \SI{13.34}{\kibi\byte} was used to represent the routing table) and \SI{18.7}{\kibi\byte} for the centroid model (of which \SI{14.0}{\kibi\byte} was required for the routing table).
+  Ordered-Covering is thus able to achieve good levels of table compression for very little memory above the cost of representing the routing table.
 
   \subsection{Timing}
 
