@@ -188,7 +188,6 @@ Finally, the minimization procedure from Espresso was applied to each subtable i
 However, unlike the technique proposed by \textcite{Liu2002}, we allowed Espresso to generate entries which matched a superset of keys matched by the original entry provided that they did not match keys expected to match entries in lower subtables.
 The minimized table depends on TCAM ordering to ensure that it is functionally equivalent to the original.
 We call this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
-
 \figurename~\ref{fig:results/final} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
 
 \subsection*{On-chip logic minimization}
