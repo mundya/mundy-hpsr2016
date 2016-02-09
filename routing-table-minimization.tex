@@ -61,7 +61,7 @@
 SpiNNaker is a many-core supercomputer, designed for the simulation of large neural-networks, in which cores communicate with multicast packets.
 Routing within SpiNNaker is controlled by ternary content addressable memories (TCAM) of quite limited size.
 As not all neural-network applications will result in routing tables sufficiently small to fit in TCAM some minimization is necessary.
-In this paper we argue that existing techniques either do not result in sufficiently minimized tables or cannot be implemented within the small code and memory footprint available to a SpiNNaker core.
+In this paper we argue that existing techniques neither result in sufficiently minimized tables nor can be implemented within the small code and memory footprint available to a SpiNNaker core.
 To resolve these issues we present a new algorithm, Ordered-Covering (OC), which exploits the ordered nature of the TCAM to achieve good compression of routing tables while meeting the code-space and memory constraints of the SpiNNaker platform.
 We show that, for one benchmark, on-chip routing table minimization using OC reduces by 98.4\% the time taken to perform the minimization off-chip.
 For a second benchmark we show that a 46.6\% reduction in routing table minimization time is achieved by combined on- and off-chip minimization.
@@ -223,7 +223,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \subfloat[%
       A merge which does not obey the \textit{up-check} rule~(2a).
       Before the merge a packet with key \mytt{0011} would have been routed to \mytt{E~S}; after the merge the same packet would be routed to \mytt{N} instead.
-      This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers} it.
+      This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers}~it.
     ]{%
       \label{fig:algorithm/rule2a_example}
       \begin{minipage}{.95\columnwidth}
@@ -235,7 +235,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \subfloat[%
       A merge which does not obey the \textit{down-check} rule~(2b).
       Before the merge a packet with key \mytt{1100} would have been routed to \mytt{NE~S}; after the merge the same packet would be routed to \mytt{SW 2} instead.
-      This is because the merge has resulted in the insertion of a new entry which \textit{covers} an existing entry.
+      This is because the merge has resulted in the insertion of a new entry which \textit{covers} an existing~entry.
     ]{%
       \label{fig:algorithm/rule2b_example}
       \begin{minipage}{.95\columnwidth}
