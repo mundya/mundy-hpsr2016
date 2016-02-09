@@ -1,0 +1,11 @@
+Results gathered on a lightly-loaded Intel Pentium G850 (2.9GHz)
+
+Gaussian Model
+==============
+Cumulative Espresso call-time / seconds: 897.178
+Mean Espresso call-time per table / seconds: 6.230
+
+Centroid Model
+==============
+Cumulative Espresso call-time / s: 1146.81
+Mean Espresso call-time per table / s: 7.964

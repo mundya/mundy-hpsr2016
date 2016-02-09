@@ -7,6 +7,7 @@ from six import iteritems
 import subprocess
 import sys
 import tempfile
+import time
 
 
 def key_mask_to_espresso(key, mask):
@@ -31,7 +32,7 @@ def espresso_to_key_mask(text):
     return key, mask
 
 
-def use_espresso(table, provide_offset=True):
+def use_espresso(table, times, provide_offset=True):
     """Call Espresso with appropriate arguments to minimise a routing table."""
     # Begin by breaking entries up into sets of unique routes
     route_entries = defaultdict(set)
@@ -68,7 +69,9 @@ def use_espresso(table, provide_offset=True):
 
             # Perform the minimisation and read back the result
             with tempfile.TemporaryFile() as g:
+                t = time.time()
                 subprocess.call(["espresso", f.name], stdout=g)
+                times.append(time.time() - t)
 
                 # Read back from g()
                 g.seek(0)
@@ -130,7 +133,7 @@ def use_espresso_on_entire_table(table, provide_offset):
     return new_table
 
 
-def my_minimize(chip, table, whole_table, provide_offset, remove_default_entries):
+def my_minimize(chip, table, whole_table, provide_offset, remove_default_entries, times=list()):
     sys.stdout.write("({:3d}, {:3d})\t{:4d}\t".format(
         chip[0], chip[1], len(table)))
     sys.stdout.flush()
@@ -143,7 +146,7 @@ def my_minimize(chip, table, whole_table, provide_offset, remove_default_entries
     if whole_table:
         new_table = use_espresso_on_entire_table(table_, provide_offset)
     else:
-        new_table = use_espresso(table_, provide_offset)
+        new_table = use_espresso(table_, times, provide_offset)
 
     assert table_is_subset_of(table, new_table)
 
@@ -171,8 +174,9 @@ if __name__ == "__main__":
         uncompressed = common.read_routing_tables(f)
 
     print("Minimising routing tables...")
+    times = list()
     compressed = dict(
-        my_minimize(chip, table, args.whole_table, not args.no_off_set, args.remove_default_entries) for
+        my_minimize(chip, table, args.whole_table, not args.no_off_set, args.remove_default_entries, times) for
         chip, table in iteritems(uncompressed)
     )
 
@@ -180,3 +184,6 @@ if __name__ == "__main__":
     print("Dumping minimised routing tables to {}...".format(fn))
     with open(fn, "wb+") as f:
         common.dump_routing_tables(f, compressed)
+
+    print("Cumulative Espresso call-time: {}".format(sum(times)))
+    print("Mean Espresso call-time per table: {}".format(sum(times) / len(uncompressed)))
