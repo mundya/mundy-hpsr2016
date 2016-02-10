@@ -129,15 +129,15 @@ similar forms of distance-dependent connectivity are found in some brain regions
 The second benchmark extends the first benchmark by adding a number of longer distance connections to the network and is based on the `centroid' model of \textcite{Navaridas2015}.
 In this model a small number of cores transmit packets to another group of cores located at some distance across the machine.
 % Each core has a \SI{10}{\percent} chance of being connected to a single, distant, group of cores and a \SI{5}{\percent} chance of being connected to two distant groups.
-\figurename~\ref{fig:experiment/setup} illustrates these two benchmarks and shows the probability of a single core being connected to other cores within the network.
+% \figurename~\ref{fig:experiment/setup} illustrates these two benchmarks and shows the probability of a single core being connected to other cores within the network.
 
-\begin{figure}
-  \centering
-  \includegraphics{experiments/experiments.pdf}
-  \caption{Map of the probability of a single core being connected to cores on surrounding chips for the two benchmarks. Darker means higher probability.
-           In the above centroid model the core is connected to two clusters of cores (toward the south west and north west).}
-  \label{fig:experiment/setup}
-\end{figure}
+% \begin{figure}
+%   \centering
+%   \includegraphics{experiments/experiments.pdf}
+%   \caption{Map of the probability of a single core being connected to cores on surrounding chips for the two benchmarks. Darker means higher probability.
+%            In the above centroid model the core is connected to two clusters of cores (toward the south west and north west).}
+%   \label{fig:experiment/setup}
+% \end{figure}
 
 Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets across the network.
 While this algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables, the routing tables of both our benchmarks were too large to fit in the number of entries available (see \figurename~\ref{fig:results/final}).
