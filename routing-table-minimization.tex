@@ -93,7 +93,7 @@ Packets are routed around this network by Address Event Representation (AER)~\pa
 At each router packets are recognised using a Ternary Content Addressable Memory (TCAM) which bit-masks keys before looking for particular matches,
 this means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \mytt{X} (`don't care').
 The TCAM is prioritised such that only the first-found match will be returned, allowing `catch all' entries to be inserted near the bottom of the table.
-If a key is not found in the table, the associated packet is `default routed': continuing in the direction it arrived (e.g., an unrecognised packet arriving via the East link is default routed out of the West link).
+If a key is not found in the table, the associated packet is `default-routed': continuing in the direction it arrived.
 
 For example, given a simplified routing table with 4-bit keys
 
@@ -112,8 +112,8 @@ For example, given a simplified routing table with 4-bit keys
 
 \noindent packets with the key \mytt{0000} would match only the first entry and would be routed out of both the North East and North links.
 Any packets with the keys \mytt{0111} or \mytt{1111} would instead match the second entry in the table and be routed out of the South link.
-Other packets beginning with a \mytt{1} would match the last entry and be routed to the indicated processing cores.
-All other packets would be unrecognised by the router and be default routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
+Other packets beginning with a \mytt{1} would match the last entry and be routed to the indicated processing cores on the same chip as the router.
+All other packets would be unrecognised by the router and be default-routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
 
 The TCAM was chosen with an arbitrary size of \num{1024}~entries, believed large enough for most applications although making entries quite precious.
 Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' routes.
@@ -127,7 +127,7 @@ This benchmark models networks in which processing cores are strongly connected 
 similar forms of distance-dependent connectivity are found in some brain regions (e.g., \parencite{Hellwig2000}).
 
 The second benchmark extends the first benchmark by adding a number of longer distance connections to the network and is based on the `centroid' model of \textcite{Navaridas2015}.
-In this model a small number of cores are connected to a group of cores located at some distance across the machine.
+In this model a small number of cores transmit packets to another group of cores located at some distance across the machine.
 % Each core has a \SI{10}{\percent} chance of being connected to a single, distant, group of cores and a \SI{5}{\percent} chance of being connected to two distant groups.
 \figurename~\ref{fig:experiment/setup} illustrates these two benchmarks and shows the probability of a single core being connected to other cores within the network.
 
@@ -155,7 +155,7 @@ In the more challenging centroid model this technique is unable to reduce any ta
 
 In contrast to the unicast IP routing tables at which minimization is normally targeted SpiNNaker routing tables are multicast.
 Consequently, there are two factors which may explain the poor compression ratios achieved by the above technique when applied to SpiNNaker routing tables.
-Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output routes, each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes -- consequently the number of entries with equivalent routes can be expected to be much smaller.
+Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output routes, each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes (any combination of six inter-chip links and 18 processors) -- consequently the number of entries with equivalent routes can be expected to be much smaller.
 Secondly, whereas IP addresses are assigned such that very coarse routing decisions may be made from very few bits, multicasting potentially reduces the amount of mutual information between keys which describe similar routes since keys are related to route origins not destinations.
 
 \subsection*{``Order-exploiting'' minimization}
@@ -183,13 +183,17 @@ and (b) slow down the process of updating the table to deal with changed routes.
 However, in the case of SpiNNaker -- and other systems with largely static routing tables and very tight constraints on entries -- this technique can allow for significant reductions in table size.
 
 We extended the technique of \textcite{Liu2002} to investigate the effect of this on our benchmark networks.
-First, each routing table was split into subtables of entries with the same route.
+First, each routing table was split into subtables of entries with the same outgoing route.
 Next the subtables were sorted such that subtables with fewer entries were moved to the top of the routing table and larger ones toward the bottom.
 Finally, the minimization procedure from Espresso was applied to each subtable in turn.
 However, unlike the technique proposed by \textcite{Liu2002}, we allowed Espresso to generate entries which matched a superset of keys matched by the original entry provided that they did not match keys expected to match entries in lower subtables.
 The minimized table depends on TCAM ordering to ensure that it is functionally equivalent to the original.
 We call this use of table ordering to achieve greater compression of entries ``order-exploiting'' minimization.
 \figurename~\ref{fig:results/final} shows that this new technique for reducing routing table size is sufficient to minimize all the routing tables in our benchmarks to fit within the 1024-entry size required by SpiNNaker.
+
+Default routing cannot generally be used with order-exploiting minimization, as order-exploiting minimization could generate entries which match keys which would otherwise be default routed.
+To avoid this problem we only minimize tables which contain entries representing every key that is expected to arrive at the router.
+As shown by \figurename~\ref{fig:results/final}, tables constructed using order-exploiting minimization (which do not rely on default routing) are smaller, for our benchmarks, than the original tables with default-routes removed and then minimized with non-order-exploiting minimization.
 
 \subsection*{On-chip logic minimization}
 
@@ -281,12 +285,13 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \noindent Where:
   \begin{itemize}
-    \item $\id{table}$ is a routing table that is sorted according to rule~(1)
+    \item $\id{table}$ is a routing table that is sorted according to rule~(1) and contains entries for all packets expected to arrive at the router, \textit{including those which could be handled by default routing}
     \item $\proc{Get-Largest-Merge}$ is a function which returns a (possibly empty) set of routing table entries which may be merged without breaking the up- or down-check rules~(2)
     \item $\proc{Apply-Merge}$ merges the set of routing entries and uses rule~(1) to determine where the new entry should be inserted into the table
   \end{itemize}
 
   The algorithm terminates early if $\attrib{table}{length} \le \id{target}$ which can save a large amount of time in comparison to fully minimizing the table.
+  Commonly, $\id{target}$ will be set to the number of entries available in the table (1024).
 
   The $\proc{Get-Largest-Merge}$ function is where the algorithm spends most of its time and we present one possible implementation in the remainder of this section.
   Our implementation considers merging all groups of entries in the table which share the same set of output ports.
@@ -309,7 +314,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \noindent Initially we could consider merging the first three entries.
   Doing so would mean that \mytt{0000} would be combined into the new entry \mytt{XXX0}, positioned below \mytt{00XX}.
   However, \mytt{00XX} would cover then \mytt{0000}.
-  As moving \mytt{0000} below \mytt{00XX} by including it in the merge would change the behaviour of the routing table, \mytt{0000} may not be included in the merge.
+  As moving \mytt{0000} below \mytt{00XX} by including it in the merge would change the  of the routing table, \mytt{0000} may not be included in the merge.
   After removing \mytt{0000} the, refined, merge is:\par\nopagebreak
   \begin{figure}[H]
     \centering
@@ -331,7 +336,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \noindent Our initial merge candidate, the first three entries, would result in the insertion of the entry \mytt{11XX} immediately above the bottom entry.
   However, \mytt{11XX} matches \mytt{1110}: one of the aliases of \mytt{XXXX}.
-  Consequently, merging the first three entries as indicated is not allowed as it changes the behaviour of the routing table.
+  Consequently, merging the first three entries as indicated is not allowed as it changes the  of the routing table.
 
   Once we have identified that the entry resulting from a merge, $e_m$ (e.g., \mytt{11XX}), covers an entry lower in the table, $e_c$ (e.g., \mytt{1110}), we attempt to modify the merge to avoid the covering.
   This may be achieved by converting one of the \mytt{X}s in $e_m$ so that it is the opposite of the bit in the same position in $e_c$.
