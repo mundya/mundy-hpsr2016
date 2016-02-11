@@ -135,15 +135,15 @@ similar forms of distance-dependent connectivity are found in some brain regions
 The second benchmark extends the first benchmark by adding a number of longer distance connections to the network and is based on the `centroid' model of \textcite{Navaridas2015}.
 In this model a small number of cores transmit packets to another group of cores located at some distance across the machine.
 % Each core has a \SI{10}{\percent} chance of being connected to a single, distant, group of cores and a \SI{5}{\percent} chance of being connected to two distant groups.
-% \figurename~\ref{fig:experiment/setup} illustrates these two benchmarks and shows the probability of a single core being connected to other cores within the network.
+\figurename~\ref{fig:experiment/setup} illustrates these two benchmarks and shows the probability of a single core being connected to other cores within the network.
 
-% \begin{figure}
-%   \centering
-%   \includegraphics{experiments/experiments.pdf}
-%   \caption{Map of the probability of a single core being connected to cores on surrounding chips for the two benchmarks. Darker means higher probability.
-%            In the above centroid model the core is connected to two clusters of cores (toward the south west and north west).}
-%   \label{fig:experiment/setup}
-% \end{figure}
+\begin{figure}
+  \centering
+  \includegraphics{experiments/experiments.pdf}
+  \caption{Map of the probability of a single core being connected to cores on surrounding chips for the two benchmarks. Darker means higher probability.
+           In the above centroid model the core is connected to two clusters of cores (toward the south west and north west).}
+  \label{fig:experiment/setup}
+\end{figure}
 
 Routing keys were assigned such that packets originating on the $p$th core of the chip at $(x, y)$ in the skewed mesh used the two most significant bytes in the 32-bit key to represent the $x$ and $y$ co-ordinates and the following five bits to indicate the core ID, $p$.
 The remaining 11 bits of the key were left blank, i.e.,~\mytt{X} in the routing tables.
@@ -465,9 +465,13 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   Using Ordered-Covering, in parallel on SpiNNaker, we were able to minimize all the tables in one of our benchmarks in \SI{13.6}{\second} -- a reduction of \SI{98.4}{\percent} compared to off-chip minimization using Espresso.
   In the other benchmark, combined use of on- and off-chip minimization using Ordered-Covering and Espresso was able to achieve a reduction of \SI{46.6}{\percent} of the time taken by off-chip minimization alone.
 
+\section*{Notes}
+
+\noindent An extensively annotated and `production-ready' Python implementation of the Ordered-Covering algorithm is available as part of the `Rig' SpiNNaker library: \url{https://goo.gl/uhTCpa}
+
 \section*{Acknowledgements}
 
-\small\noindent The authors would like to thank James Knight, Simon Davidson and Luis A.\ Plana for their helpful feedback on drafts of this paper.
+\noindent The authors would like to thank James Knight, Simon Davidson and Luis A.\ Plana for their helpful feedback on drafts of this paper.
 The SpiNNaker project has been supported by EPSRC grants EP/D07908X/1 and EP/G015740/1~(BIMPA).
 
 \printbibliography
