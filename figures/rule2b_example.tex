@@ -14,10 +14,10 @@
 \begin{tikzpicture}
   % Original table
   \node (original) {
-    \begin{tabular}{c l r}
+    \begin{tabular}{c l l}
       \toprule
-      \texttt{1101} & \texttt{SW 2} & \tikz[na]\node [coordinate] (e0) {}; \\
-      \texttt{1110} & \texttt{SW 2} & \tikz[na]\node [coordinate] (e1) {}; \\
+      \texttt{1101} & \texttt{SW 2} & \texttt{1101} \tikz[na]\node [coordinate] (e0) {}; \\
+      \texttt{1110} & \texttt{SW 2} & \texttt{1110} \tikz[na]\node [coordinate] (e1) {}; \\
       \texttt{XXXX} & \texttt{NE S} & \texttt{1100} \ldots \\
       \bottomrule
     \end{tabular}
