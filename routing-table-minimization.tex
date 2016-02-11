@@ -334,28 +334,32 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \includegraphics{figures/downcheck_resolve_example_1}
   \end{figure}
 
-  \noindent Our initial merge candidate, the first three entries, would result in the insertion of the entry \mytt{11XX} immediately above the bottom entry.
-  However, \mytt{11XX} matches \mytt{1110}: one of the aliases of \mytt{XXXX}.
+  \noindent Our initial merge candidate, the first three entries, would result in the insertion of the entry \mytt{0XXX} immediately above the bottom entry.
+  However, \mytt{0XXX} matches \mytt{0101}: one of the aliases of \mytt{XXXX}.
   Consequently, merging the first three entries as indicated is not allowed as it changes the  of the routing table.
 
-  Once we have identified that the entry resulting from a merge, $e_m$ (e.g., \mytt{11XX}), covers an entry lower in the table, $e_c$ (e.g., \mytt{1110}), we attempt to modify the merge to avoid the covering.
+  Once we have identified that the entry resulting from a merge, $e_m$ (e.g., \mytt{0XXX}), covers an entry lower in the table, $e_c$ (e.g., \mytt{0101}), we attempt to modify the merge to avoid the covering.
   This may be achieved by converting one of the \mytt{X}s in $e_m$ so that it is the opposite of the bit in the same position in $e_c$.
-  In our example we look to convert either of the \mytt{X}s in \mytt{11XX} such that the new entry resulting from the merge, $e_m^\prime$, is either \mytt{11\underline{0}X} or \mytt{11X\underline{1}} -- neither of which would cover \mytt{1110}, $e_c$.
+  In our example we look to convert one of the \mytt{X}s in \mytt{0XXX} such that the new entry resulting from the merge, $e_m^\prime$, is \mytt{0\underline{0}XX}, \mytt{0X\underline{1}X} or \mytt{0XX\underline{0}} -- none of which would cover \mytt{0101}, $e_c$.
   
   An \mytt{X} in the entry resulting from a merge may be converted to another value, $v$, by removing from the merge any entries which have either \mytt{X} or $\overline{v}$ in the given bit position.
-  In our example, we wish to convert \mytt{11\underline{XX}} to either \mytt{11\underline{0}X} or \mytt{11X\underline{1}} by removing entries from the merge \mytt{\{11\underline{00}, 11\underline{01}, 11\underline{1X}\}}.
-  To convert \mytt{11X\underline{X}} to \mytt{11X\underline{1}} we remove from the merge any entries with \mytt{X} or \mytt{0} in the rightmost bit position, in this instance we would remove \mytt{110\underline{0}} and \mytt{111\underline{X}} from the merge.
-  Alternatively, to convert \mytt{11\underline{X}X} to \mytt{11\underline{0}X} we remove from the merge any entries with \mytt{X} or \mytt{1} in the indicated position, here we would need to remove only \mytt{11\underline{1}X}.
-  As a result of removing entries we have two new merge candidates:\nopagebreak
+  In our example, we wish to convert \mytt{0\underline{XXX}} to \mytt{0\underline{0}XX}, \mytt{0X\underline{1}X} or \mytt{0XX\underline{0}} by removing entries from the merge \mytt{\{0\underline{000}, 0\underline{011}, 0\underline{11X}\}}.
+  To convert \mytt{0XX\underline{X}} to \mytt{0XX\underline{0}} we remove from the merge any entries with \mytt{X} or \mytt{1} in the rightmost bit position, in this instance we would remove \mytt{001\underline{1}} and \mytt{011\underline{X}} from the merge.
+  Alternatively, to convert \mytt{0X\underline{X}X} to \mytt{0X\underline{1}X} we remove from the merge any entries with \mytt{X} or \mytt{0} in the indicated position, here we would need to remove only \mytt{00\underline{0}0}.
+  Finally, to convert \mytt{0\underline{X}XX} to \mytt{0\underline{0}XX} we would need to remove \mytt{0\underline{1}1X} from the merge.
+  As a result of removing entries we have three new merge candidates:\nopagebreak
   
   \begin{align*}
-    \{\mbox{\mytt{1100}}, \mbox{\mytt{1101}}, \mbox{\mytt{111X}}\} -
-    \{\mbox{\mytt{1100}}, \mbox{\mytt{111X}}\} &= \{\mbox{\mytt{1101}}\} \\
-    \{\mbox{\mytt{1100}}, \mbox{\mytt{1101}}, \mbox{\mytt{111X}}\} -
-    \{\mbox{\mytt{111X}}\} &= \{\mbox{\mytt{1100}}, \mbox{\mytt{1101}}\}
+    \{\mbox{\mytt{0000}}, \mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} -
+    \{\mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} &= \{\mbox{\mytt{0001}}\} \\
+    \{\mbox{\mytt{0000}}, \mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} -
+    \{\mbox{\mytt{0000}}\} &= \{\mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} \\
+    \{\mbox{\mytt{0000}}, \mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} -
+    \{\mbox{\mytt{011X}}\} &= \{\mbox{\mytt{0000}}, \mbox{\mytt{0011}}\} \\
   \end{align*}
   
-  We select the merge candidate with the most remaining entries, resulting in:\par\nopagebreak
+  We immediately reject the merge candidate with the fewest entries, leaving us with two candidates containing two entries each.
+  As a heuristic, we select the merge candidate which converted the most significant \mytt{X}, resulting in:\par\nopagebreak
   \begin{figure}[H]
     \centering
     \includegraphics{figures/downcheck_resolve_example_2}

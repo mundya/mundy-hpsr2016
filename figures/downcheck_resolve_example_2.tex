@@ -16,10 +16,10 @@
   \node (original) {
     \begin{tabular}{c l l}
       \toprule
-      \tikz[na]\node [coordinate] (e0) {};\texttt{1100} & \texttt{N} \\
-      \tikz[na]\node [coordinate] (e1) {};\texttt{1101} & \texttt{N}\\
-      \texttt{111X} & \texttt{N} \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
+      \tikz[na]\node [coordinate] (e0) {};\texttt{0000} & \texttt{N} \\
+      \tikz[na]\node [coordinate] (e1) {};\texttt{0011} & \texttt{N}\\
+      \texttt{011X} & \texttt{N} \\
+      \texttt{XXXX} & \texttt{4} & \texttt{0101 1000 1001} \ldots\\
       \bottomrule
     \end{tabular}
   };
@@ -28,9 +28,9 @@
   \node (invalid) [below=1em of original] {
     \begin{tabular}{c l l}
       \toprule
-      \texttt{111X} & \texttt{N} \\
-      \tikz[na]\node [coordinate] (e2) {};\texttt{110X} & \texttt{N} & \texttt{1100 1101} \\
-      \texttt{XXXX} & \texttt{4} & \texttt{0100 1011 1110}\\
+      \texttt{011X} & \texttt{N} \\
+      \tikz[na]\node [coordinate] (e2) {};\texttt{00XX} & \texttt{N} & \texttt{0000 0011} \\
+      \texttt{XXXX} & \texttt{4} & \texttt{0101 1000 1001} \ldots\\
       \bottomrule
     \end{tabular}
   };
