@@ -162,22 +162,7 @@ Secondly, whereas IP addresses are assigned such that very coarse routing decisi
 
 Unlike IP routing tables, SpiNNaker routing tables can be expected to be largely static.
 As such, logic minimization which does not preserve exact equivalence, but instead matches a superset of the routing keys used, may be used to generate routing tables with far fewer entries.
-For example, the first two entries in the table
-
-  \begin{table}[H]
-    \centering
-    \begin{tabular}{c l l}
-      \toprule
-      Key-Mask & Route \\
-      \midrule
-      \texttt{0001} & \texttt{N} \\
-      \texttt{0010} & \texttt{N} \\
-      \texttt{1111} & \texttt{S} \\
-      \bottomrule
-    \end{tabular}
-  \end{table}
-
-\noindent may be combined into a new entry (\mytt{00XX}) which would match more keys than were matched by the original two entries.
+For example, \mytt{0001} and \mytt{0010} may be combined into a new entry (\mytt{00XX}) which would match more keys than were matched by the original two entries.
 In IP routing tables, which are considerably larger than those in SpiNNaker and are highly dynamic, this minimization would be avoided as it would (a) require the minimizer to inspect the entire table during minimization to avoid breaking the functionality of the table,
 and (b) slow down the process of updating the table to deal with changed routes.
 However, in the case of SpiNNaker -- and other systems with largely static routing tables and very tight constraints on entries -- this technique can allow for significant reductions in table size.
