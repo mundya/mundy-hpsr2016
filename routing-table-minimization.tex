@@ -121,6 +121,8 @@ As the largest SpiNNaker machine will consist of \num{57600}~chips, and the same
 
 \section{Routing table minimization}
 
+\subsection{Benchmarks}
+
 To indicate the importance of routing table minimization to SpiNNaker we constructed two benchmark networks.
 In the first of these networks each processing core in a 144-chip system is connected to every other core in the system with a probability determined by the distance between the cores.
 This benchmark models networks in which processing cores are strongly connected to their neighbours but are weakly connected to distant chips:
@@ -139,12 +141,14 @@ In this model a small number of cores transmit packets to another group of cores
 %   \label{fig:experiment/setup}
 % \end{figure}
 
-Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets across the network.
-While this algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables, the routing tables of both our benchmarks were too large to fit in the number of entries available (see \figurename~\ref{fig:results/final}).
-
 Routing keys were assigned such that packets originating on the $p$th core of the chip at $(x, y)$ in the skewed mesh used the two most significant bytes in the 32-bit key to represent the $x$ and $y$ co-ordinates and the following five bits to indicate the core ID, $p$.
 The remaining 11 bits of the key were left blank, i.e.,~\mytt{X} in the routing tables.
 This `XYP' key assignation scheme is common in SpiNNaker applications~\parencite{Davies2012}.
+
+Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets across the network.
+While this algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables, the routing tables of both our benchmarks were too large to fit in the number of entries available, even when entries which could be replaced by default routing were removed (see \figurename~\ref{fig:results/final}).
+
+\subsection{Routing table compaction}
 
 \textcite{Liu2002} presented a method for using Espresso-II~\parencite{Brayton1984} to minimize routing tables for IP routers.
 In this method a routing table is partitioned in subtables in which entries have equivalent routing destinations and prefix length.
@@ -158,7 +162,7 @@ Consequently, there are two factors which may explain the poor compression ratio
 Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output routes, each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes (any combination of six inter-chip links and 18 processors) -- consequently the number of entries with equivalent routes can be expected to be much smaller.
 Secondly, whereas IP addresses are assigned such that very coarse routing decisions may be made from very few bits, multicasting potentially reduces the amount of mutual information between keys which describe similar routes since keys are related to route origins not destinations.
 
-\subsection*{``Order-exploiting'' minimization}
+\subsection{``Order-exploiting'' minimization}
 
 Unlike IP routing tables, SpiNNaker routing tables can be expected to be largely static.
 As such, logic minimization which does not preserve exact equivalence, but instead matches a superset of the routing keys used, may be used to generate routing tables with far fewer entries.
@@ -180,7 +184,7 @@ Default routing cannot generally be used with order-exploiting minimization, as 
 To avoid this problem we only minimize tables which contain entries representing every key that is expected to arrive at the router.
 As shown by \figurename~\ref{fig:results/final}, tables constructed using order-exploiting minimization (which do not rely on default routing) are smaller, for our benchmarks, than the original tables with default-routes removed and then minimized with non-order-exploiting minimization.
 
-\subsection*{On-chip logic minimization}
+\subsection{On-chip logic minimization}
 
 Espresso is capable of rapidly minimizing routing tables of the scale shown in our benchmarks; a mean-time of \SI{6.23}{\second} was spent in Espresso when minimizing a table from the locally-connected benchmark on a lightly-loaded Intel~Pentium~G850.
 However, as projected SpiNNaker machines are expected to consist of nearly sixty-thousand chips, and the same number of routing tables, the  compute time required to minimize all tables is likely to be significant -- more than four days if the locally-connected benchmark were scaled to the size of a full SpiNNaker machine.
@@ -200,7 +204,6 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   A routing entry covers another when the set of keys matched by one entry intersects with those of another below it in the table.
 
   In addition, we annotate each entry in the table with the set of keys that it is expected to match, the \textit{aliases} of the entry.
-  An empty aliases set simply means that the entry is expected to match all of the packets which would be matched by its key.
   For example, merging the first two entries in the following table would generate a new entry with the original keys listed as aliases:
 
   \begin{figure}[H]
