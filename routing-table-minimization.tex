@@ -366,11 +366,12 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \end{figure}
   
   We repeat the above process until either no entries are covered (that is $e_m$ does not cover any $e_c$) and a valid merge is produced; or it is not possible to modify the merge to avoid covering a lower entry and the merge must be abandoned.
-  In our example, the new merge candidate results in an entry \mytt{110X} being inserted between the bottom two entries.
+  In our example, the new merge candidate results in an entry \mytt{00XX} being inserted between the two remaining entries.
   As this new entry does not cover any other entries in the table the algorithm terminates.
   
-  In our example there were two bits in $e_m$, \mytt{11\underline{XX}}. which could be converted to avoid intersection with $e_c$.
-  This is not always the case; \textit{todo...}
+  In our example there were three bits in $e_m$, \mytt{0\underline{XXX}}, which could be converted to avoid covering $e_c$.
+  Precisely which bits may be converted depends upon the nature of the covered entry, for example, if \mytt{0XXX} were covering \mytt{010X} then only two bits (\mytt{0\underline{XX}X}) may be converted.
+  We priorities the uncovering of entries for which fewer bits may be converted.
 
   \section{Results}
 
