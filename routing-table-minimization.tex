@@ -67,7 +67,7 @@ As not all neural-network applications will result in routing tables sufficientl
 In this paper we argue that existing techniques neither result in sufficiently minimized tables nor can be implemented within the small code and memory footprint available to a SpiNNaker core.
 To resolve these issues we present a new algorithm, Ordered-Covering (OC), which exploits the ordered nature of the TCAM to achieve good compression of routing tables while meeting the code-space and memory constraints of the SpiNNaker platform.
 We show that, for one benchmark, on-chip routing table minimization using OC reduces by 98.4\% the time taken to perform the minimization off-chip.
-For a second more challenging benchmark we show that a 46.6\% reduction in routing table minimization time is achieved by combined on- and off-chip minimization.
+For a second, more challenging, benchmark we show that a 46.6\% reduction in routing table minimization time is achieved by combined on- and off-chip minimization.
   \end{abstract}
 
   \section{Introduction}
@@ -120,7 +120,7 @@ All other packets would be unrecognised by the router and be default-routed in a
 
 The TCAM was chosen with an arbitrary size of \num{1024}~entries, believed large enough for most applications although making entries quite precious.
 Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' routes.
-Exploiting the massive parallelism of SpiNNaker to perform any minimisation of routing tables is desirable due to the large number of tables to minimise, \num{57600} in the largest configurations.
+Exploiting the massive parallelism of SpiNNaker to perform any minimization of routing tables is desirable due to the large number of tables to minimize, \num{57600} in the largest configurations of machine.
 As we will show, this presents a challenge due to the limited on-chip memory available.
 
 \section{Routing table minimization}
@@ -163,7 +163,7 @@ In the more challenging centroid model this technique is unable to reduce \emph{
 
 In contrast to the unicast IP routing tables at which minimization is normally targeted SpiNNaker routing tables are multicast.
 Consequently, there are two factors which may explain the poor compression ratios achieved by the above technique when applied to SpiNNaker routing tables.
-Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output routes (e.g. tens), each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes (any combination of six inter-chip links and 18 processors) -- consequently the number of entries with equivalent routes can be expected to be much smaller.
+Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output routes (e.g., tens), each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes (any combination of six inter-chip links and 18 processors) -- consequently the number of entries with equivalent routes can be expected to be much smaller.
 Secondly, whereas IP addresses are assigned such that very coarse routing decisions may be made from very few bits, multicasting potentially reduces the amount of mutual information between keys which describe similar routes since keys are related to route origins not destinations.
 
 \subsection{``Order-exploiting'' minimization}
@@ -378,7 +378,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \figurename~\ref{fig:results/final} shows the performance of Ordered-Covering, running on SpiNNaker, when used to minimize the benchmark routing tables.
   OC reduces all of the tables in the locally-connected benchmark to fit in the router TCAM.
-  While this is not true of the centroid benchmark, it is able to reduce \SI{48.6}{\percent} of the tables to fewer than 1024 entries.
+  While this is not true of the centroid benchmark, OC is able to reduce \SI{48.6}{\percent} of the tables to fewer than 1024 entries.
   This roughly halves the number of tables which would otherwise need to be minimized off-chip.
 
 
