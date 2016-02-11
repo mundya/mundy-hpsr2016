@@ -49,6 +49,9 @@
 \usepackage[binary-units]{siunitx}
 \usepackage[caption=false, font=footnotesize]{subfig}
 
+% Crossing things out
+\usepackage{cancel}
+
 %% Bibliographies
 \usepackage[backend=bibtex, style=ieee, doi=false, url=false, mincitenames=1, maxcitenames=2, maxbibnames=7]{biblatex}
 \renewcommand*{\bibfont}{\small}
@@ -59,12 +62,12 @@
 
   \begin{abstract}
 SpiNNaker is a many-core supercomputer -- designed for the simulation of large neural-networks -- in which cores communicate with multicast packets.
-Routing within SpiNNaker is controlled by ternary content addressable memories (TCAM) of quite limited size.
+Routing within SpiNNaker is controlled by Ternary Content Addressable Memories (TCAMs) of quite limited size.
 As not all neural-network applications will result in routing tables sufficiently small to fit in TCAM some minimization is necessary.
 In this paper we argue that existing techniques neither result in sufficiently minimized tables nor can be implemented within the small code and memory footprint available to a SpiNNaker core.
 To resolve these issues we present a new algorithm, Ordered-Covering (OC), which exploits the ordered nature of the TCAM to achieve good compression of routing tables while meeting the code-space and memory constraints of the SpiNNaker platform.
 We show that, for one benchmark, on-chip routing table minimization using OC reduces by 98.4\% the time taken to perform the minimization off-chip.
-For a second benchmark we show that a 46.6\% reduction in routing table minimization time is achieved by combined on- and off-chip minimization.
+For a second more challenging benchmark we show that a 46.6\% reduction in routing table minimization time is achieved by combined on- and off-chip minimization.
   \end{abstract}
 
   \section{Introduction}
@@ -117,7 +120,8 @@ All other packets would be unrecognised by the router and be default-routed in a
 
 The TCAM was chosen with an arbitrary size of \num{1024}~entries, believed large enough for most applications although making entries quite precious.
 Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' routes.
-As the largest SpiNNaker machine will consist of \num{57600}~chips, and the same number of TCAM routing tables, it is desirable to exploit the massive parallelism of SpiNNaker to perform any minimisation of routing tables rather than to minimise tables externally before loading them to the machine. As we will show, this presents a challenge due to the limited on-chip memory available.
+Exploiting the massive parallelism of SpiNNaker to perform any minimisation of routing tables is desirable due to the large number of tables to minimise, \num{57600} in the largest configurations.
+As we will show, this presents a challenge due to the limited on-chip memory available.
 
 \section{Routing table minimization}
 
@@ -155,11 +159,11 @@ In this method a routing table is partitioned in subtables in which entries have
 Each subtable is minimized using Espresso to produce a functionally equivalent but smaller set of entries.
 \figurename~\ref{fig:results/final} shows the result of applying this technique to the routing tables from our benchmarks once entries which could be replaced by default routing were removed.
 In the case of the `locally-connected' benchmark a combination of default routing and logic minimization is able to reduce the majority, but not all, of the 144 routing tables to fewer than \num{1024}~entries.
-In the more challenging centroid model this technique is unable to reduce any tables to fit within the TCAM constraint.
+In the more challenging centroid model this technique is unable to reduce \emph{any} tables to fit within the TCAM constraint.
 
 In contrast to the unicast IP routing tables at which minimization is normally targeted SpiNNaker routing tables are multicast.
 Consequently, there are two factors which may explain the poor compression ratios achieved by the above technique when applied to SpiNNaker routing tables.
-Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output routes, each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes (any combination of six inter-chip links and 18 processors) -- consequently the number of entries with equivalent routes can be expected to be much smaller.
+Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output routes (e.g. tens), each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes (any combination of six inter-chip links and 18 processors) -- consequently the number of entries with equivalent routes can be expected to be much smaller.
 Secondly, whereas IP addresses are assigned such that very coarse routing decisions may be made from very few bits, multicasting potentially reduces the amount of mutual information between keys which describe similar routes since keys are related to route origins not destinations.
 
 \subsection{``Order-exploiting'' minimization}
@@ -214,7 +218,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \begin{figure*}
     \subfloat[%
       A merge which does not obey the \textit{up-check} rule~(2a).
-      Before the merge a packet with key \mytt{0011} would have been routed to \mytt{E~S}; after the merge the same packet would be routed to \mytt{N} instead.
+      Before the merge a packet with key \mytt{0011} would have been routed to \mytt{E} \mytt{S}; after the merge the same packet would be routed to \mytt{N} instead.
       This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers}~it.
     ]{%
       \label{fig:algorithm/rule2a_example}
@@ -226,7 +230,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \hfill
     \subfloat[%
       A merge which does not obey the \textit{down-check} rule~(2b).
-      Before the merge a packet with key \mytt{1100} would have been routed to \mytt{NE~S}; after the merge the same packet would be routed to \mytt{SW 2} instead.
+      Before the merge a packet with key \mytt{1100} would have been routed to \mytt{NE} \mytt{S}; after the merge the same packet would be routed to \mytt{SW} \mytt{2} instead.
       This is because the merge has resulted in the insertion of a new entry which \textit{covers} an existing~entry.
     ]{%
       \label{fig:algorithm/rule2b_example}
@@ -239,7 +243,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \label{fig:algorithm/rules}
   \end{figure*}
 
-  When minimizing a routing table, the following \textit{Ordered-Covering rules} are used:
+  When minimizing a routing table, the following \textit{Ordered-Covering rules} are used to ensure the behaviour of the table remains consistent:
 
   \begin{enumerate}[\IEEEsetlabelwidth{3)}]
     \item Routing tables must be ordered as follows:
@@ -289,6 +293,8 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \subsection{Resolving the up-check}
 
+  The \textit{up-check} ensures that an entry, $e$, cannot -- through being merged with other entries -- become covered by being moved below another entry which matches a subset of the keys matched by $e$.
+  
   For each merge candidate we inspect every entry in the merge to ensure it does not break the up-check rule~(2a).
   When inspecting an entry, $e$, in the merge candidate we scan through the entries between $e$ and the position where the merged entry would be inserted.
   If any entry is found which would cover $e$, $e$ is removed from the merge candidate and we proceed to check the next entry in the candidate merge.
@@ -313,7 +319,6 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \subsection{Resolving the down-check}
 
-  The \textit{up-check} ensures that an entry, $e$, cannot -- through being merged with other entries -- become covered by being moved below another entry which matches a subset of the keys matched by $e$.
   The \textit{down-check} instead ensures that the entry resulting from a merge would not match a subset of the packets expected to match entries below the point where the entry resulting from the merge would be located.
   
   For example, consider the table:\par\nopagebreak
@@ -331,19 +336,15 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   In our example we look to convert one of the \mytt{X}s in \mytt{0XXX} such that the new entry resulting from the merge, $e_m^\prime$, is \mytt{0\underline{0}XX}, \mytt{0X\underline{1}X} or \mytt{0XX\underline{0}} -- none of which would cover \mytt{0101}, $e_c$.
   
   An \mytt{X} in the entry resulting from a merge may be converted to another value, $v$, by removing from the merge any entries which have either \mytt{X} or $\overline{v}$ in the given bit position.
-  In our example, we wish to convert \mytt{0\underline{XXX}} to \mytt{0\underline{0}XX}, \mytt{0X\underline{1}X} or \mytt{0XX\underline{0}} by removing entries from the merge \mytt{\{0\underline{000}, 0\underline{011}, 0\underline{11X}\}}.
-  To convert \mytt{0XX\underline{X}} to \mytt{0XX\underline{0}} we remove from the merge any entries with \mytt{X} or \mytt{1} in the rightmost bit position, in this instance we would remove \mytt{001\underline{1}} and \mytt{011\underline{X}} from the merge.
+  In our example, to convert \mytt{0XX\underline{X}} to \mytt{0XX\underline{0}} we remove from the merge any entries with \mytt{X} or \mytt{1} in the rightmost bit position, in this instance we would remove \mytt{001\underline{1}} and \mytt{011\underline{X}} from the merge.
   Alternatively, to convert \mytt{0X\underline{X}X} to \mytt{0X\underline{1}X} we remove from the merge any entries with \mytt{X} or \mytt{0} in the indicated position, here we would need to remove only \mytt{00\underline{0}0}.
   Finally, to convert \mytt{0\underline{X}XX} to \mytt{0\underline{0}XX} we would need to remove \mytt{0\underline{1}1X} from the merge.
   As a result of removing entries we have three new merge candidates:\nopagebreak
   
   \begin{align*}
-    \{\mbox{\mytt{0000}}, \mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} -
-    \{\mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} &= \{\mbox{\mytt{0001}}\} \\
-    \{\mbox{\mytt{0000}}, \mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} -
-    \{\mbox{\mytt{0000}}\} &= \{\mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} \\
-    \{\mbox{\mytt{0000}}, \mbox{\mytt{0011}}, \mbox{\mytt{011X}}\} -
-    \{\mbox{\mytt{011X}}\} &= \{\mbox{\mytt{0000}}, \mbox{\mytt{0011}}\} \\
+    \{\mytt{0000},~\cancel{\mytt{0011}},~\cancel{\mytt{011X}}\} &~\rightarrow~ \mytt{000\underline{0}} \\
+    \{\cancel{\mytt{0000}},~\mytt{0011},~\mytt{011X}\}          &~\rightarrow~ \mytt{0X\underline{1}X} \\
+    \{\mytt{0000},~\mytt{0011},~\cancel{\mytt{011X}}\}          &~\rightarrow~ \mytt{0\underline{0}XX} \\
   \end{align*}
   
   We immediately reject the merge candidate with the fewest entries, leaving us with two candidates containing two entries each.
@@ -376,9 +377,9 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 \end{figure*}
 
   \figurename~\ref{fig:results/final} shows the performance of Ordered-Covering, running on SpiNNaker, when used to minimize the benchmark routing tables.
-  While OC does not manage to minimize all of the tables in the centroid benchmark to fewer than 1024 entries it is able to reduce \SI{48.6}{\percent} of the tables to this size.
-  This roughly halves the number of tables which would otherwise need to be minimized off-chip.
   OC reduces all of the tables in the locally-connected benchmark to fit in the router TCAM.
+  While this is not true of the centroid benchmark, it is able to reduce \SI{48.6}{\percent} of the tables to fewer than 1024 entries.
+  This roughly halves the number of tables which would otherwise need to be minimized off-chip.
 
 
   \subsection{Memory usage}
@@ -401,7 +402,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   The peak heap usage of our minimizer when running on SpiNNaker was \SI{17.9}{\kibi\byte} for the locally-connected benchmark (of which \SI{13.3}{\kibi\byte} was used to represent the routing table) and \SI{18.7}{\kibi\byte} for the centroid model (\SI{14.0}{\kibi\byte} for the routing table).
   Ordered-Covering is thus able to achieve good levels of table compression for very little memory cost above that required to represent the routing table.
 
-  \subsection{Timing}
+  \subsection{Execution time}
 
   \begin{table}
     \centering
@@ -409,7 +410,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \label{table:results/oc-timing}
     \begin{tabular}{l S S S}
       \toprule
-      & & \multicolumn{2}{c}{Minimization time / \si{\second}} \\
+      & & \multicolumn{2}{c}{Exec. time / \si{\second}} \\
       Model & {Load time / \si{\second}} & {Sufficient} & {Fully} \\
       \midrule
       Locally-connected & 3.8 & 9.8 & 14.9 \\
