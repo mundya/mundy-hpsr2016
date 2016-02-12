@@ -70,8 +70,8 @@ Routing within SpiNNaker is controlled by Ternary Content Addressable Memories (
 As not all neural-network applications will result in routing tables sufficiently small to fit in TCAM some minimization is necessary.
 In this paper we argue that existing techniques neither result in sufficiently minimized tables nor can be implemented within the small code and memory footprint available to a SpiNNaker core.
 To resolve these issues we present a new algorithm, Ordered-Covering (OC), which exploits the ordered nature of TCAMs to achieve good compression of routing tables while meeting the code-space and memory constraints of the SpiNNaker platform.
-We show that, for one benchmark, on-chip routing table minimization using OC results in a 66.0$\times$ speed-up compared with performing the minimization off-chip.
-For a second, more challenging, benchmark we show that a 1.9$\times$ speed-up in table minimization time is achieved by combined on- and off-chip minimization.
+We show that, for one benchmark, on-chip routing table minimization using OC results in a 64.5$\times$ speed-up compared with performing the minimization off-chip.
+For a second, more challenging, benchmark we show that a 2.8$\times$ speed-up in table minimization time is achieved by combined on- and off-chip minimization.
   \end{abstract}
 
   \section{Introduction}
@@ -259,8 +259,8 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
     In addition, as a heuristic, we keep the table sorted in increasing order of \textit{generality}, i.e., the number \mytt{X}s contained in their keys and masks.
     For example, an entry with the key-mask of \mytt{00XX} (\textit{generality} of 2) must be placed below any entries with fewer \mytt{X}s in their key-masks, e.g., below \mytt{0000} and \mytt{00X1} (generalities of 0 and 1 respectively).
-    This is only a partial ordering of the table, and as an additional heuristic we require that new entries of generality $g$ be inserted \emph{below} existing entries of generality $g$.
-    For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted below it.
+    This is only a partial ordering of the table, and as an additional heuristic we require that new entries of generality $g$ be inserted \emph{above} existing entries of generality $g$.
+    For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted above it.
 
   Ordered Covering uses a simple, greedy, algorithm to minimize a routing table according to these rules:\par\nopagebreak
   \begin{codebox}
@@ -370,15 +370,15 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \caption{Compression performance of all the routing table minimization schemes for both benchmarks.
            Each violin shows the histogram of routing table sizes.
            Ordered-Covering minimizes all of the tables in the locally-connected benchmark, and
-           \SI{48.6}{\percent} of the tables in the centroid benchmark, to $\le 1024$ entries.
+           \SI{66}{\percent} of the tables in the centroid benchmark, to $\le 1024$ entries.
            }
   \label{fig:results/final}
 \end{figure*}
 
   \figurename~\ref{fig:results/final} shows the performance of Ordered-Covering, running on SpiNNaker, when used to minimize the benchmark routing tables.
   OC reduces all of the tables in the locally-connected benchmark to fit in the router TCAM.
-  While this is not true of the centroid benchmark, OC is able to reduce \SI{48.6}{\percent} of the tables to fewer than 1024 entries.
-  This roughly halves the number of tables which would otherwise need to be minimized off-chip.
+  While this is not true of the centroid benchmark, OC is able to reduce \SI{66}{\percent} of the tables to fewer than 1024 entries.
+  This more than halves the number of tables which would otherwise need to be minimized off-chip.
 
 
   \subsection{Memory usage}
@@ -398,7 +398,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   If the space saved by minimizing the routing table were reclaimed then any merge of ten or more entries would reduce the memory required to represent the routing and the aliases tables.
 
   Our implementation of Ordered-Covering does not reclaim the memory saved by reducing the size of a routing table, meaning that the routing table remains a constant size while the aliases table grows with every merge.
-  The peak heap usage of our minimizer when running on SpiNNaker was \SI{17.9}{\kibi\byte} for the locally-connected benchmark (of which \SI{13.3}{\kibi\byte} was used to represent the routing table) and \SI{18.7}{\kibi\byte} for the centroid model (\SI{14.0}{\kibi\byte} for the routing table).
+  The peak heap usage of our minimizer when running on SpiNNaker was \SI{18.4}{\kibi\byte} for the locally-connected benchmark (of which \SI{13.3}{\kibi\byte} was used to represent the routing table) and \SI{18.8}{\kibi\byte} for the centroid model (\SI{14.0}{\kibi\byte} for the routing table).
   Ordered-Covering is thus able to achieve good levels of table compression for very little memory cost above that required to represent the routing table.
 
   \subsection{Execution time}
@@ -412,8 +412,8 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
       & & \multicolumn{2}{c}{Exec. time / \si{\second}} \\
       Model & {Load time / \si{\second}} & {Sufficient} & {Fully} \\
       \midrule
-      Locally-connected & 3.8 & 9.8 & 14.9 \\
-      Centroid & 3.6 & & 15.0 \\
+      Locally-connected & 3.8 & 13.9 & 25.6 \\
+      Centroid & 3.6 & & 25.6 \\
       \bottomrule
     \end{tabular}
   \end{table}
@@ -438,11 +438,11 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   Table~\ref{table:results/oe-espresso-timing} shows the time taken to minimize the same benchmarks serially on an Intel~Pentium~G850 using order-exploiting Espresso.
 
   As Ordered-Covering was able to minimize all tables in the locally-connected benchmark to fit within TCAM no tables would need to be minimized off-chip.
-  Consequently, on-chip OC represents a \SI{66.0}{\times} speed-up when compared to using order-exploiting Espresso.
+  Consequently, on-chip OC represents a 64.5$\times$ speed-up when compared to using order-exploiting Espresso.
 
-  Ordered-Covering was only able to minimize \SI{48.6}{\percent} of routing tables in the centroid benchmark to fit in TCAM.
-  The remainder of these tables could then be minimized using order-exploiting Espresso, and the total time taken to minimize tables using this joint approach would be around \SI{612}{\second}.
-  In this instance combined use of OC and Espresso represents a \SI{1.9}{\times} speed-up when compared to just using order-exploiting Espresso.
+  Ordered-Covering was only able to minimize \SI{66}{\percent} of routing tables in the centroid benchmark to fit in TCAM.
+  The remainder of these tables could then be minimized using order-exploiting Espresso, and the total time taken to minimize tables using this joint approach would be around \SI{413}{\second}.
+  In this instance combined use of OC and Espresso represents a 2.8$\times$ speed-up when compared to just using order-exploiting Espresso.
 
   As routing tables may be minimized in parallel the time taken to minimize tables using order-exploiting Espresso could be reduced by using more processing cores.
   However, significantly reducing the time taken to minimize routing tables of the largest SpiNNaker machine (\num{57600} tables) will prove challenging without making use of the machine itself.
@@ -461,8 +461,8 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   However, due to the limited code-space and memory available on the machine, this technique was not suitable for direct implementation on-chip: a desirable feature as routing table minimization is `embarassingly'-parallel and the largest SpiNNaker system will contain nearly sixty-thousand routing tables.
 
   To overcome these issues we presented Ordered-Covering, a novel algorithm for routing table minimization capable of running within the small amount of memory available to a SpiNNaker processing core.
-  Using Ordered-Covering, in parallel on SpiNNaker, we were able to minimize all the tables in one of our benchmarks in \SI{13.6}{\second} -- a speed-up of \SI{66.0}{\times} compared to off-chip minimization using Espresso.
-  In the other benchmark, combined use of on- and off-chip minimization using Ordered-Covering and Espresso was able to achieve a speed-up of \SI{1.9}{\times} of the time taken by off-chip minimization alone.
+  Using Ordered-Covering, in parallel on SpiNNaker, we were able to minimize all the tables in one of our benchmarks in \SI{17.7}{\second} -- a speed-up of 64.5$\times$ compared to off-chip minimization using Espresso.
+  In the other benchmark, combined use of on- and off-chip minimization using Ordered-Covering and Espresso was able to achieve a speed-up of 2.8$\times$ of the time taken by off-chip minimization alone.
 
 \section*{Notes}
 
