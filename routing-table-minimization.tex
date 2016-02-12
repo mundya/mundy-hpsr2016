@@ -65,7 +65,7 @@
   \maketitle
 
   \begin{abstract}
-SpiNNaker is a many-core supercomputer -- designed for the simulation of large neural-networks -- in which cores communicate with multicast packets.
+SpiNNaker is a many-core supercomputer -- designed for the simulation of large neural-networks -- in which cores communicate with \emph{multicast} packets.
 Routing within SpiNNaker is controlled by Ternary Content Addressable Memories (TCAMs) of quite limited size.
 As not all neural-network applications will result in routing tables sufficiently small to fit in TCAM some minimization is necessary.
 In this paper we argue that existing techniques neither result in sufficiently minimized tables nor can be implemented within the small code and memory footprint available to a SpiNNaker core.
@@ -94,7 +94,7 @@ This can be drawn as a hexagonal mesh but is sometimes more conveniently picture
   
 \end{figure}
 
-Packets are routed around this network by Address Event Representation (AER)~\parencite{Boahen2000}; each packet contains a \emph{routing key} which identifies its source and routers forward (and may duplicate) packets towards their destination(s).
+Packets are routed around this network by Address Event Representation (AER)~\parencite{Boahen2000}; each packet contains a \emph{routing key} which, typically, identifies its source and routers forward (and may duplicate) packets towards their destination(s).
 32-bit routing keys are used, which reflect the intended scale of the system -- $10^9$ neurons, simulated across $10^6$ processing cores.
 At each router packets are recognised using a Ternary Content Addressable Memory (TCAM) which bit-masks keys before looking for particular matches,
 this means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \mytt{X} (`don't care').
@@ -117,9 +117,9 @@ For example, given a simplified routing table with 4-bit keys
 \end{table}
 
 \noindent packets with the key \mytt{0000} would match only the first entry and would be routed out of both the North East and North links.
-Any packets with the keys \mytt{0111} or \mytt{1111} would instead match the second entry in the table and be routed out of the South link.
+Any packets with the keys \mytt{0111} or \mytt{1111} would match the second entry in the table and be routed out of the South link.
 Other packets beginning with a \mytt{1} would match the last entry and be routed to the indicated processing cores on the same chip as the router.
-All other packets would be unrecognised by the router and be default-routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
+All other packets would be unrecognised and be default-routed in a straight line, e.g., a packet arriving on the South West link with the key \mytt{0011} would be routed out of the North East link.
 
 The TCAM was chosen with an arbitrary size of \num{1024}~entries, believed large enough for most applications although making entries quite precious.
 Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' routes.
@@ -131,7 +131,7 @@ As we will show, this presents a challenge due to the limited on-chip memory ava
 \subsection{Benchmarks}
 
 To indicate the importance of routing table minimization to SpiNNaker we constructed two benchmark networks.
-In the first of these networks each processing core in a $12\times12$, 144-chip (\num{2592}-core) system is connected to every other core in the system with a probability determined by the distance between the cores.
+In the first of these, each processing core in a $12\times12$, 144-chip (\num{2592}-core) system is connected to every other core in the system with a probability determined by the distance between the cores.
 This benchmark models networks in which processing cores are strongly connected to their neighbours but are weakly connected to distant chips:
 similar forms of distance-dependent connectivity are found in some brain regions (e.g., \parencite{Hellwig2000}).
 
@@ -144,7 +144,7 @@ In this model a small number of cores transmit packets to another group of cores
   \centering
   \includegraphics{experiments/experiments.pdf}
   \caption{Map of the probability of a single core being connected to cores on surrounding chips for the two benchmarks. Darker means higher probability.
-           In the above centroid model the core is connected to two clusters of cores (toward the south west and north west).}
+           In the above centroid model the core is connected to two clusters of cores (toward the South West and North West).}
   \label{fig:experiment/setup}
 \end{figure}
 
@@ -153,7 +153,7 @@ The remaining 11 bits of the key were left blank, i.e.,~\mytt{X} in the routing 
 This `XYP' key assignation scheme is common in SpiNNaker applications~\parencite{Davies2012}.
 
 Once the connectivity of the benchmarks was determined, the Neighbour Exploring Routing (NER) algorithm~\parencite{Navaridas2015} was used to generate the routes taken by packets across the network.
-While this algorithm has been shown to effectively exploit `default routing' to reduce the size of routing tables, the routing tables of both our benchmarks were too large to fit in the number of entries available, even when entries which could be replaced by default routing were removed (see \figurename~\ref{fig:results/final}).
+While this algorithm has been shown to exploit `default routing' to reduce the size of routing tables, the routing tables of both our benchmarks were too large to fit in the number of entries available, even when entries which could be replaced by default routing were removed (see \figurename~\ref{fig:results/final}, at the end of the paper).
 
 \subsection{Routing table compaction}
 
@@ -164,10 +164,10 @@ Each subtable is minimized using Espresso to produce a functionally equivalent b
 In the case of the `locally-connected' benchmark a combination of default routing and logic minimization is able to reduce the majority, but not all, of the 144 routing tables to fewer than \num{1024}~entries.
 In the more challenging centroid model this technique is unable to reduce \emph{any} tables to fit within the TCAM constraint.
 
-In contrast to the unicast IP routing tables at which minimization is normally targeted SpiNNaker routing tables are multicast.
+In contrast to the unicast IP routing tables, at which minimization is normally targeted, SpiNNaker routing tables are multicast.
 Consequently, there are two factors which may explain the poor compression ratios achieved by the above technique when applied to SpiNNaker routing tables.
 Firstly, while the IP routing tables discussed by \textcite{Liu2002} have relatively few output routes (e.g., tens), each SpiNNaker router has the equivalent of up to $2^{24}$ unique routes (any combination of six inter-chip links and 18 processors) -- consequently the number of entries with equivalent routes can be expected to be much smaller.
-Secondly, whereas IP addresses are assigned such that very coarse routing decisions may be made from very few bits, multicasting potentially reduces the amount of mutual information between keys which describe similar routes since keys are related to route origins not destinations.
+Secondly, whereas IP addresses are assigned such that very coarse routing decisions may be made from very few bits, multicasting potentially reduces the amount of mutual information between keys which describe similar routes since keys are typically related to route origins, not destinations.
 
 \subsection{``Order-exploiting'' minimization}
 
@@ -197,7 +197,7 @@ Espresso is capable of minimizing routing tables of the scale shown in our bench
 However, as projected SpiNNaker machines are expected to consist of nearly sixty-thousand chips, and the same number of routing tables, the  compute time required to minimize all tables is likely to be significant -- more than four days if the locally-connected benchmark were scaled to the size of a full SpiNNaker machine.
 Fortunately, minimization on this scale is an `embarrassingly'-parallel problem, and the wall-clock time required to perform this task for SpiNNaker may be significantly reduced by performing the minimization directly on the chips to which the routing tables relate.
 
-Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of data tightly-coupled memory (DTCM) and \SI{32}{\kibi\byte} of instruction tightly-coupled memory (ITCM).
+Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of Data Tightly-Coupled Memory (DTCM) and \SI{32}{\kibi\byte} of Instruction Tightly-Coupled Memory (ITCM).
 This places severe limitations on the programs which they may execute.
 While we have shown that Espresso may be used to perform order-exploiting minimization for use with SpiNNaker, its memory usage and code size preclude its use on embedded systems~\parencite{Lysecky2003}.
 In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required (see \figurename~\ref{fig:results/final}) as it will not generate entries which match a superset of the original keys.
