@@ -221,7 +221,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \begin{figure*}
     \subfloat[%
-      A merge which does not obey the \textit{up-check} rule~(2a).
+      A merge which does not obey the \textit{up-check} rule.
       Before the merge a packet with key \mytt{0011} would have been routed to \mytt{E} \mytt{S}; after the merge the same packet would be routed to \mytt{N} instead.
       This is because the merge has resulted in the correct entry being moved below an entry which \textit{covers}~it.
     ]{%
@@ -233,7 +233,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     }
     \hfill
     \subfloat[%
-      A merge which does not obey the \textit{down-check} rule~(2b).
+      A merge which does not obey the \textit{down-check} rule.
       Before the merge a packet with key \mytt{1100} would have been routed to \mytt{NE} \mytt{S}; after the merge the same packet would be routed to \mytt{SW} \mytt{2} instead.
       This is because the merge has resulted in the insertion of a new entry which \textit{covers} an existing~entry.
     ]{%
@@ -247,25 +247,22 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \label{fig:algorithm/rules}
   \end{figure*}
 
-  When minimizing a routing table, the following \textit{Ordered-Covering rules} are used to ensure the behaviour of the table remains consistent:
+  When minimizing a routing table, the following \textit{Ordered-Covering rules} are used to ensure the behaviour of the table remains consistent.
+  These rules forbid any merge which would:
 
-  \begin{enumerate}[\IEEEsetlabelwidth{3)}]
-    \item Routing tables must be ordered as follows:
-      \begin{enumerate}[\IEEEsetlabelwidth{a)}]
-        \item Firstly, in increasing order of \textit{generality}, i.e., the number \mytt{X}s contained in their keys and masks.
-              For example, an entry with the key-mask of \mytt{00XX} (\textit{generality} of 2) must be placed below any entries with fewer \mytt{X}s in their key-masks, e.g., below \mytt{0000} and \mytt{00X1} (generalities of 0 and 1 respectively).
-        \item Secondly, new entries must be inserted below existing entries of equivalent generality.
-              For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted below it.
-      \end{enumerate}
-    \item The only merges allowed are those which would not:
-      \begin{enumerate}[\IEEEsetlabelwidth{b)}]
-        \item cause any entry in the merge to become \textit{covered} by an entry higher up the table.
-              This rule is referred to as the \textit{up-check} rule.
-              A merge that would be disallowed by this rule is shown in \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2a_example}.
-            \item cause any \textit{aliased entry} below the merge to become \textit{covered}, see \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2b_example}.
-              This rule is referred to as the \textit{down-check} rule.
-      \end{enumerate}
-  \end{enumerate}
+  \begin{description}[\IEEEsetlabelwidth{``Down-check''}]
+    \item[``Up-check'']
+      cause any entry in the merge to become \textit{covered} by an entry higher up the table.
+      A merge that would be disallowed by this rule is shown in \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2a_example}.
+    \item[``Down-check'']
+      cause any \textit{aliased entry} below the merge to become \textit{covered},
+      see \figurename~\ref{fig:algorithm/rules}\subref{fig:algorithm/rule2b_example}.
+  \end{description}
+
+    In addition, as a heuristic, we keep the table sorted in increasing order of \textit{generality}, i.e., the number \mytt{X}s contained in their keys and masks.
+    For example, an entry with the key-mask of \mytt{00XX} (\textit{generality} of 2) must be placed below any entries with fewer \mytt{X}s in their key-masks, e.g., below \mytt{0000} and \mytt{00X1} (generalities of 0 and 1 respectively).
+    This is only a partial ordering of the table, and as an additional heuristic we require that new entries of generality $g$ be inserted \emph{below} existing entries of generality $g$.
+    For example, if \mytt{XX00} were already present in the table the new entry \mytt{0XX1} must be inserted below it.
 
   A simple, greedy, algorithm to minimize a routing table according to these rules is:\par\nopagebreak
   \begin{codebox}
@@ -283,7 +280,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \begin{itemize}
     \item $\id{table}$ is a routing table that is sorted according to rule~(1) and contains entries for all packets expected to arrive at the router, \textit{including those which could be handled by default routing}
     \item $\proc{Get-Largest-Merge}$ is a function which returns a (possibly empty) set of routing table entries which may be merged without breaking the up- or down-check rules~(2)
-    \item $\proc{Apply-Merge}$ merges the set of routing entries and uses rule~(1) to determine where the new entry should be inserted into the table
+    \item $\proc{Apply-Merge}$ merges the set of routing entries and uses the table-ordering heuristics to determine where the new entry should be inserted into the table
   \end{itemize}
 
   The algorithm terminates early if $\attrib{table}{length} \le \id{target}$ which can save a large amount of time in comparison to fully minimizing the table.
@@ -291,7 +288,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   The $\proc{Get-Largest-Merge}$ function is where the algorithm spends most of its time and we present one possible implementation in the remainder of this section.
   Our implementation considers merging all groups of entries in the table which share the same set of output ports.
-  In practice, merging these groups will often violate either rule~(2a)~or~(2b).
+  In practice, merging these groups will often violate either the up-check or down-check rules.
   Rather than immediately rejecting these merge candidates, we use a pair of simple greedy approaches to iteratively remove entries from merge candidates until both rules are obeyed.
   We split our approach into two phases, the first refines merge candidates until they obey the up-check rule and the second does the same for the down-check rule.
 
@@ -299,7 +296,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   The \textit{up-check} ensures that an entry, $e$, cannot -- through being merged with other entries -- become covered by being moved below another entry which matches a subset of the keys matched by $e$.
   
-  For each merge candidate we inspect every entry in the merge to ensure it does not break the up-check rule~(2a).
+  For each merge candidate we inspect every entry in the merge to ensure it does not break the up-check rule.
   When inspecting an entry, $e$, in the merge candidate we scan through the entries between $e$ and the position where the merged entry would be inserted.
   If any entry is found which would cover $e$, $e$ is removed from the merge candidate and we proceed to check the next entry in the candidate merge.
 
