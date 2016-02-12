@@ -246,7 +246,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
     \label{fig:algorithm/rules}
   \end{figure*}
 
-  When merging routing table entries, the following \textit{Ordered-Covering rules} are used to ensure the behaviour of the table remains consistent:
+  When merging routing table entries, the following \textit{Ordered-Covering rules} are used to ensure the behavior of the table remains consistent:
 
   \begin{description}[\IEEEsetlabelwidth{\emph{Down-check} rule:}]
     \item[\emph{Up-check} rule:]
@@ -305,7 +305,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \end{figure}
 
   \noindent Initially we could consider merging the first three entries.
-  Doing so would mean that \mytt{0000} would be combined into the new entry \mytt{XXX0}, positioned below \mytt{00XX}, covering \mytt{0000}.
+  Doing so would mean that \mytt{0000} would be combined into the new entry \mytt{XXX0}, positioned below \mytt{00XX}, causing \mytt{0000} to become covered.
   As the entry matching \mytt{0000} is moved below \mytt{00XX} by including it in the merge, \mytt{0000} must be removed from the merge to avoid covering it.
   After removing \mytt{0000} the, refined, merge is:\par\nopagebreak
   \begin{figure}[H]
@@ -327,7 +327,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \noindent Our initial merge candidate, the first three entries, would result in the insertion of the entry \mytt{0XXX} immediately above the bottom entry.
   However, \mytt{0XXX} matches \mytt{0101}: one of the aliases of \mytt{XXXX}.
-  Consequently, merging the first three entries as indicated is not allowed as it violates the down-check rule, changing the behaviour of the routing table.
+  Consequently, merging the first three entries as indicated is not allowed as it violates the down-check rule, changing the behavior of the routing table.
 
   Once we have identified that the entry resulting from a merge, $e_m$ (e.g., \mytt{0XXX}), covers an entry lower in the table, $e_c$ (e.g., \mytt{0101}), we attempt to modify the merge to avoid the covering.
   This may be achieved by converting one of the \mytt{X}s in $e_m$ so that it is the opposite of the bit in the same position in $e_c$.
