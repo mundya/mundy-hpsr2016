@@ -70,8 +70,8 @@ Routing within SpiNNaker is controlled by Ternary Content Addressable Memories (
 As not all neural-network applications will result in routing tables sufficiently small to fit in TCAM some minimization is necessary.
 In this paper we argue that existing techniques neither result in sufficiently minimized tables nor can be implemented within the small code and memory footprint available to a SpiNNaker core.
 To resolve these issues we present a new algorithm, Ordered-Covering (OC), which exploits the ordered nature of TCAMs to achieve good compression of routing tables while meeting the code-space and memory constraints of the SpiNNaker platform.
-We show that, for one benchmark, on-chip routing table minimization using OC results in a \SI{66.0}{\times} speed-up compared with performing the minimization off-chip.
-For a second, more challenging, benchmark we show that a \SI{1.9}{\times} speed-up in table minimization time is achieved by combined on- and off-chip minimization.
+We show that, for one benchmark, on-chip routing table minimization using OC results in a 66.0$\times$ speed-up compared with performing the minimization off-chip.
+For a second, more challenging, benchmark we show that a 1.9$\times$ speed-up in table minimization time is achieved by combined on- and off-chip minimization.
   \end{abstract}
 
   \section{Introduction}
