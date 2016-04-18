@@ -126,6 +126,14 @@ Indeed, it is not always possible to avoid exceeding this limit on routing table
 Exploiting the massive parallelism of SpiNNaker to perform any minimization of routing tables is desirable due to the large number of tables to minimize, \num{57600} in the largest configurations of machine.
 As we will show, this presents a challenge due to the limited on-chip memory available.
 
+In this paper we construct two benchmark sets of routing tables to illustrate the necessity of routing table minimization for the SpiNNaker platform.
+First, we show that neither default routing, nor an existing routing table minimization technique~\parencite{Liu2002}, are able to reduce all benchmark tables to fit within the limited number of TCAM entries available.
+Next, we show that by exploiting the ordered nature of the TCAM, and by matching a superset of the originally matched keys, we are able to sufficiently minimize all our benchmark routing tables using Espresso~\parencite{Brayton1984} on a regular PC.
+However, due to the large number of routing tables within a full SpiNNaker machine it is desirable to perform the minimization on the machine itself.
+As each SpiNNaker core has access to only a small amount of code-space and memory use of Espresso on chip is precluded, and, as non-exact minimization is required, existing embedded minimizers are unsuitable.
+We introduce Ordered-Covering (OC), a memory-efficient routing table minimizer which greedily merges entries with equivalent routes subject to two rules which ensure the correctness of the resulting table.
+We show that parallel use of OC is able to significantly decrease the time required to minimize the routing tables in our benchmarks while using at most \SI{4.9}{\kibi\byte} more memory than is required to represent the routing table.
+
 \section{Routing table minimization}
 
 \subsection{Benchmarks}
@@ -458,7 +466,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   In this paper we have shown that routing table minimization for SpiNNaker, a massively parallel supercomputer with a multicast interconnect network, is a challenging problem.
   In particular we indicated that neither `default routing' nor existing minimization techniques were able to reduce tables from two benchmark models to fit within the limited number of TCAM entries in a SpiNNaker router.
   We extended the minimization technique of \textcite{Liu2002} to use Espresso to generate functionally equivalent, compressed, routing tables which matched a superset of the packets matched by the original tables and fit within the available number of entries.
-  However, due to the limited code-space and memory available on the machine, this technique was not suitable for direct implementation on-chip: a desirable feature as routing table minimization is `embarassingly'-parallel and the largest SpiNNaker system will contain nearly sixty-thousand routing tables.
+  However, due to the limited code-space and memory available to each SpiNNaker core, this technique was not suitable for direct implementation on-chip: a desirable feature as routing table minimization is `embarassingly'-parallel and the largest SpiNNaker system will contain nearly sixty-thousand routing tables.
 
   To overcome these issues we presented Ordered-Covering, a novel algorithm for routing table minimization capable of running within the small amount of memory available to a SpiNNaker processing core.
   Using Ordered-Covering, in parallel on SpiNNaker, we were able to minimize all the tables in one of our benchmarks in \SI{17.7}{\second} -- a speed-up of 64.5$\times$ compared to off-chip minimization using Espresso.
