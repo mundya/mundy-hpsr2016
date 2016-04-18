@@ -131,7 +131,7 @@ First, we show that neither default routing, nor an existing routing table minim
 Next, we show that by exploiting the ordered nature of the TCAM, and by matching a superset of the originally matched keys, we are able to sufficiently minimize all our benchmark routing tables using Espresso~\parencite{Brayton1984} on a regular PC.
 However, due to the large number of routing tables within a full SpiNNaker machine it is desirable to perform the minimization on the machine itself.
 As each SpiNNaker core has access to only a small amount of code-space and memory use of Espresso on chip is precluded, and, as non-exact minimization is required, existing embedded minimizers are unsuitable.
-We introduce Ordered-Covering (OC), a memory-efficient routing table minimizer which, subject to a heuristic which sorts the routing table and two rules which ensure the correctness of the final table, greedily merges entries with equivalent routes.
+We introduce Ordered-Covering (OC), a memory-efficient routing table minimizer which, subject to a heuristic which sorts the routing table in increasing number of \mytt{X}s and two rules which ensure the correctness of the final table, greedily merges entries with equivalent routes.
 We show that parallel use of OC is able to significantly decrease the time required to minimize the routing tables in our benchmarks while using at most \SI{4.9}{\kibi\byte} more memory than is required to represent the routing table.
 
 \section{Routing table minimization}
