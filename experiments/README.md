@@ -78,7 +78,7 @@ minimization:
 ### Using Ordered-Covering on SpiNNaker
 
 To use Ordered-Covering on SpiNNaker first download and build
-[the SpiNNaker implementation of Ordered-Covering](https://github.com/project-rig/rig-routing-tables)
+[the SpiNNaker implementation of Ordered-Covering](https://github.com/project-rig/rig_routing_tables)
 and copy the resulting `*.aplx` files to this directory.
 
 Next use `spinnaker.py` with `python spinnaker.py [in] [out]`. This script will
