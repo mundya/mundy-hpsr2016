@@ -16,6 +16,7 @@ if __name__ == "__main__":
     # Parse the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("routing_table")
+    parser.add_argument("output")
     args = parser.parse_args()
 
     # Load and minimise all routing tables
@@ -28,7 +29,6 @@ if __name__ == "__main__":
         my_minimize(chip, table) for chip, table in iteritems(uncompressed)
     )
 
-    fn = "compressed/pyoc_" + args.routing_table.split("/")[1]
-    print("Dumping minimised routing tables to {}...".format(fn))
-    with open(fn, "wb+") as f:
+    print("Dumping minimised routing tables to {}...".format(args.output))
+    with open(args.output, "wb+") as f:
         common.dump_routing_tables(f, compressed)

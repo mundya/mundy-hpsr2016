@@ -55,10 +55,10 @@
 %% Bibliographies
 \usepackage[backend=bibtex, style=ieee, doi=false, url=false, mincitenames=1, maxcitenames=2, maxbibnames=7]{biblatex}
 \renewcommand*{\bibfont}{\small}
-\renewbibmacro{finentry}{%
-  \iffieldequalstr{entrykey}{Navaridas2015}%<- key after which you want the break
-  {\finentry\newpage}
-{\finentry}}
+%\renewbibmacro{finentry}{
+%  \iffieldequalstr{entrykey}{Navaridas2015}%<- key after which you want the break
+%  {\finentry\newpage}
+%{\finentry}}
 \bibliography{paper}
 
 \begin{document}
@@ -101,7 +101,7 @@ this means that each key bit can be matched with binary \mytt{0}, \mytt{1}, or \
 The TCAM is prioritised such that only the first-found match will be returned, allowing `catch all' entries to be inserted near the bottom of the table.
 If a key is not found in the table, the associated packet is `default-routed': continuing in the direction it arrived.
 
-For example, given a simplified routing table with 4-bit keys
+For example, given a simplified routing table with 4-bit keys:
 
 \begin{table}[H]
   \centering
@@ -125,6 +125,14 @@ The TCAM was chosen with an arbitrary size of \num{1024}~entries, believed large
 Indeed, it is not always possible to avoid exceeding this limit on routing table size -- particularly for neural networks which feature large `fanin' or `fanout' routes.
 Exploiting the massive parallelism of SpiNNaker to perform any minimization of routing tables is desirable due to the large number of tables to minimize, \num{57600} in the largest configurations of machine.
 As we will show, this presents a challenge due to the limited on-chip memory available.
+
+In this paper we construct two benchmark sets of routing tables to illustrate the necessity of routing table minimization for the SpiNNaker platform.
+First, we show that neither default routing, nor an existing routing table minimization technique~\parencite{Liu2002}, are able to reduce all benchmark tables to fit within the limited number of TCAM entries available.
+Next, we show that by exploiting the ordered nature of the TCAM, and by matching a superset of the originally matched keys, we are able to sufficiently minimize all our benchmark routing tables using Espresso~\parencite{Brayton1984} on a regular PC.
+However, due to the large number of routing tables within a full SpiNNaker machine it is desirable to perform the minimization on the machine itself.
+As each SpiNNaker core has access to only a small amount of code-space and memory use of Espresso on chip is precluded, and, as non-exact minimization is required, existing embedded minimizers are unsuitable.
+We introduce Ordered-Covering (OC), a routing table minimization algorithm which greedily merges entries with equivalent routes.
+We show that parallel use of OC is able to significantly decrease the time required to minimize the routing tables in our benchmarks while using little more memory than is required to represent the routing table.
 
 \section{Routing table minimization}
 
@@ -174,13 +182,13 @@ Secondly, whereas IP addresses are assigned such that very coarse routing decisi
 Unlike IP routing tables, SpiNNaker routing tables can be expected to be largely static.
 As such, logic minimization which does not preserve exact equivalence, but instead matches a superset of the routing keys in use, may be used to generate routing tables with far fewer entries.
 For example, \mytt{0001} and \mytt{0010} may be combined into a new entry (\mytt{00XX}) which matches a superset of the two keys originally matched.
-In IP routing tables, which are considerably larger than those in SpiNNaker and are highly dynamic, this minimization would be avoided as it would (a) require the minimizer to inspect the entire table during minimization to avoid breaking the functionality of the table,
-and (b) slow down the process of updating the table to deal with changed routes.
+In IP routing tables, which are considerably larger than those in SpiNNaker and are highly dynamic, this minimization would be avoided as it (a) requires the minimizer to inspect the entire table during minimization to avoid breaking the functionality of the table,
+and (b) slows down the process of updating the table to deal with changed routes.
 However, in the case of SpiNNaker -- and other systems with largely static routing tables and very tight constraints on entries -- this technique can allow for significant reductions in table size.
 
 We extended the technique of \textcite{Liu2002} to investigate the effect of this on our benchmark networks.
 First, each routing table was split into subtables of entries with the same outgoing route.
-Next the subtables were sorted such that subtables with fewer entries were moved to the top of the routing table and larger ones toward the bottom.
+Next the subtables were sorted such that subtables with fewer entries were moved to the top of the routing table and subtables with more entries toward the bottom.
 Finally, the minimization procedure from Espresso was applied to each subtable in turn.
 However, unlike the technique proposed by \textcite{Liu2002}, we allowed Espresso to generate entries which matched a superset of keys matched by the original entry provided that they did not match keys expected to match entries in lower subtables.
 The minimized table depends on TCAM ordering to ensure that it is functionally equivalent to the original.
@@ -198,7 +206,7 @@ However, as projected SpiNNaker machines are expected to consist of nearly sixty
 Fortunately, minimization on this scale is an `embarrassingly'-parallel problem, and the wall-clock time required to perform this task for SpiNNaker may be significantly reduced by performing the minimization directly on the chips to which the routing tables relate.
 
 Processing cores in SpiNNaker have access to \SI{64}{\kibi\byte} of Data Tightly-Coupled Memory (DTCM) and \SI{32}{\kibi\byte} of Instruction Tightly-Coupled Memory (ITCM).
-This places severe limitations on the programs which they may execute.
+This places severe limits on the programs which they may execute.
 While we have shown that Espresso may be used to perform order-exploiting minimization for use with SpiNNaker, its memory usage and code size preclude its use on embedded systems~\parencite{Lysecky2003}.
 In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capable of effectively compressing IP routing tables while consuming very little memory (as low as \SI{16}{\kibi\byte}) but is not suitable for use when order-exploiting minimization is required (see \figurename~\ref{fig:results/final}) as it will not generate entries which match a superset of the original keys.
 
@@ -276,13 +284,13 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   \noindent Where:
   \begin{itemize}
-    \item $\id{table}$ is a routing table that is sorted according to rule~(1) and contains entries for all packets expected to arrive at the router, \textit{including those which could be handled by default routing}
-    \item $\proc{Get-Largest-Merge}$ is a function which returns a (possibly empty) set of routing table entries which may be merged without breaking the up- or down-check rules~(2)
+    \item $\id{table}$ is a routing table that is sorted according to generality heuristics, and contains entries for all packets expected to arrive at the router, \textit{including those which could be handled by default routing}
+    \item $\proc{Get-Largest-Merge}$ is a function which returns a (possibly empty) set of routing table entries which may be merged without breaking the \emph{up-} or \emph{down-check} rules
     \item $\proc{Apply-Merge}$ merges the set of routing entries and uses the table-ordering heuristics to determine where the new entry should be inserted into the table
   \end{itemize}
 
   The algorithm terminates early if $\attrib{table}{length} \le \id{target}$ which can save a large amount of time in comparison to fully minimizing the table.
-  Commonly, $\id{target}$ will be set to the number of entries available in the table (e.g., 1024).
+  Commonly, $\id{target}$ will be set to the number of entries available in the TCAM (e.g., 1024).
 
   The $\proc{Get-Largest-Merge}$ function is where the algorithm spends most of its time and we present one possible implementation in the remainder of this section.
   Our implementation considers merging all groups of entries in the table which share the same set of output ports.
@@ -456,9 +464,9 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
   \section{Conclusion}
 
   In this paper we have shown that routing table minimization for SpiNNaker, a massively parallel supercomputer with a multicast interconnect network, is a challenging problem.
-  In particular we indicated that neither the use of `default routing' nor existing minimization techniques were able to reduce tables from two benchmark models to fit within the limited number of TCAM entries in a SpiNNaker router.
+  In particular we indicated that neither `default routing' nor existing minimization techniques were able to reduce tables from two benchmark models to fit within the limited number of TCAM entries in a SpiNNaker router.
   We extended the minimization technique of \textcite{Liu2002} to use Espresso to generate functionally equivalent, compressed, routing tables which matched a superset of the packets matched by the original tables and fit within the available number of entries.
-  However, due to the limited code-space and memory available on the machine, this technique was not suitable for direct implementation on-chip: a desirable feature as routing table minimization is `embarassingly'-parallel and the largest SpiNNaker system will contain nearly sixty-thousand routing tables.
+  However, due to the limited code-space and memory available to each SpiNNaker core, this technique was not suitable for direct implementation on-chip: a desirable feature as routing table minimization is `embarassingly'-parallel and the largest SpiNNaker system will contain nearly sixty-thousand routing tables.
 
   To overcome these issues we presented Ordered-Covering, a novel algorithm for routing table minimization capable of running within the small amount of memory available to a SpiNNaker processing core.
   Using Ordered-Covering, in parallel on SpiNNaker, we were able to minimize all the tables in one of our benchmarks in \SI{17.7}{\second} -- a speed-up of 64.5$\times$ compared to off-chip minimization using Espresso.
@@ -466,12 +474,19 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
 \section*{Notes}
 
-\noindent An extensively annotated and `production-ready' Python implementation of the Ordered-Covering algorithm is available as part of the `Rig' SpiNNaker library: \url{https://goo.gl/uhTCpa}
+\small
+\begin{itemize}
+  \item An extensively annotated and `production-ready' Python implementation of the Ordered-Covering algorithm is available as part of the `Rig' SpiNNaker library: \url{https://goo.gl/uhTCpa}
+  \item The C implementation of Ordered-Covering used in our experiments is also available online (\url{https://goo.gl/qM228T}) and may be compiled for use on either PC or SpiNNaker.
+  \item Benchmarks and scripts used in this paper are available online at: \\\url{https://goo.gl/uiMW4D}.
+\end{itemize}
 
 \section*{Acknowledgements}
+\small The authors would like to thank James Knight, Simon Davidson and Luis A.\ Plana for their helpful feedback on drafts of this paper.
 
-\noindent The authors would like to thank James Knight, Simon Davidson and Luis A.\ Plana for their helpful feedback on drafts of this paper.
-The SpiNNaker project has been supported by EPSRC grants EP/D07908X/1 and EP/G015740/1~(BIMPA).
+The design and construction of the SpiNNaker machine was supported by EPSRC (the UK Engineering and Physical Sciences Research Council) under grants EP/D07908X/1 and EP/G015740/1.
+Ongoing support comes from the EU ICT Flagship Human Brain Project (FP7-604102) and the European Research Council under the European Union's Seventh Framework Programme (FP7/2007-2013) / ERC grant agreement 320689.
 
+\newpage
 \printbibliography
 \end{document}
