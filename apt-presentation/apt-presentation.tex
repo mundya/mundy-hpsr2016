@@ -16,6 +16,11 @@
   subtable/.style = {draw, ultra thick, inner sep=0, minimum width=4em},
 }
 
+\usepackage{siunitx}
+
+\usepackage[backend=bibtex, style=ieee, doi=false, url=false, mincitenames=1, maxcitenames=2, maxbibnames=7]{biblatex}
+\bibliography{../paper}
+
 \begin{document}
 \maketitle
 
@@ -77,7 +82,7 @@
       \begin{itemize}
         \item Source-based routing doesn't allow this
       \end{itemize}
-    \item Ignores the prioritization of the TCAM
+    \item Ignores the prioritisation of the TCAM
   \end{itemize}
 \end{frame}
 
@@ -138,12 +143,44 @@
 
 \begin{frame}{On-chip routing table minimisation}  % Why?
   % Timing results from Espresso, assume naive scaling
+  Espresso -- \SI{6.23}{\second} per table
+  \pause $\times$ \num{57600} nodes\ldots
+  \pause \emph{4 days}
+
+  \begin{itemize}
+    \item Problem is trivially parallel -- use SpiNNaker
+    \item \textbf{BUT} Espresso \emph{is} big
+    \item \textbf{AND} needs a lot of memory
+  \end{itemize}
+
+  Other people have looked at this:
+
+  \begin{itemize}
+    \item \fullcite{Lysecky2003}
+    \item \fullcite{Ahmad2007} -- \textbf{m-Trie}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[plain]{}
   \begin{center}
     \includegraphics[page=4]{../experiments/presentation_plots}
   \end{center}
+\end{frame}
+
+\begin{frame}{On-chip routing table minimisation}
+  Same problems as before --
+  \begin{itemize}
+    \item Good when coarse routing decisions can be made with few bits
+    \item Ignores the prioritisation of the TCAM
+  \end{itemize}
+  \vskip.5\baselineskip
+
+  \textbf{Challenge}
+  \begin{itemize}
+    \item Simple minimiser (fit in ITCM)
+    \item Small data structures (fit in DTCM)
+    \item Exploit the ordering of the TCAM (minimise well)
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{Ordered-Covering}
