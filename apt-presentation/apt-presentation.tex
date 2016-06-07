@@ -2,7 +2,7 @@
 \usetheme[darktitle]{UniversityOfManchester}
 
 % Document properties
-\title{On-SpiNNaker routing table minimisation}
+\title{Routing table minimisation on~SpiNNaker}
 \author{Andrew Mundy}
 
 % Switch out the fonts
@@ -16,7 +16,8 @@
   subtable/.style = {draw, ultra thick, inner sep=0, minimum width=4em},
 }
 
-\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage[binary-units]{siunitx}
 
 \usepackage[backend=bibtex, style=ieee, doi=false, url=false, mincitenames=1, maxcitenames=2, maxbibnames=7]{biblatex}
 \bibliography{../paper}
@@ -25,7 +26,15 @@
 \maketitle
 
 \begin{frame}{Benchmarks}
-  
+  \begin{center}
+    \includegraphics{../experiments/experiments}
+  \end{center}
+
+  Also --
+  \begin{itemize}
+    \item Parts of Spaun (particularly CCONV)
+    \item Broken links
+  \end{itemize}
 \end{frame}
 
 \begin{frame}[plain]{}
@@ -184,30 +193,83 @@
 \end{frame}
 
 \begin{frame}{Ordered-Covering}
+  \centering
+  \includegraphics{../figures/aliases_example}
 
+  \begin{itemize}
+    \item Sort entries in ascending number of \texttt{X}s
+    \item Annotate entries with keys they are expected to match
+    \item Greedily merge entries with equivalent routes
+      \begin{itemize}
+        \item Subject to two rules\ldots
+      \end{itemize}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}{\emph{Up-check} rule}
+  No entry in the \emph{merge} may become \emph{covered} by another entry.
+
   \begin{center}
     \includegraphics{../figures/rule2a_example}
   \end{center}
+
+  e.g., \texttt{0011} becomes covered by \texttt{00XX}.
 \end{frame}
 
 \begin{frame}{\emph{Down-check} rule}
+  No \emph{aliased entry} below the merge may become \emph{covered}.
+
   \begin{center}
     \includegraphics{../figures/rule2b_example}
   \end{center}
+
+  e.g., \texttt{1100} becomes covered by \texttt{11XX}.
+\end{frame}
+
+\begin{frame}{Algorithm}
+  \begin{itemize}
+    \item While table is larger than desired
+      \begin{itemize}
+        \item Get the largest valid merge
+        \item If the merge is empty, break
+        \item Otherwise apply the merge
+      \end{itemize}
+  \end{itemize}
+
+  Most potential merges will break the \emph{up-} or \emph{down-check} rules, so\ldots
 \end{frame}
 
 \begin{frame}{Resolving the \emph{up-check}}
-  \includegraphics<1>{../figures/upcheck_resolve_example_1}
-  \includegraphics<2>{../figures/upcheck_resolve_example_2}
+  Remove from the merge any entry which would become \emph{covered} through being merged.
+
+  \begin{center}
+    \includegraphics<1>{../figures/upcheck_resolve_example_1}
+    \includegraphics<2>{../figures/upcheck_resolve_example_2}
+  \end{center}
 \end{frame}
 
 \begin{frame}{Resolving the \emph{down-check}}
   \begin{center}
-    \includegraphics{../figures/downcheck_resolve_example_1}
+    \only<1-2>{\includegraphics{../figures/downcheck_resolve_example_1}}
+    \only<3>{\includegraphics{../figures/downcheck_resolve_example_2}}
   \end{center}
+
+  \only<1>{
+  Convert an \texttt{X} to either \texttt{0} or \texttt{1}\ldots
+  \vskip.5\baselineskip
+
+  \texttt{0XXX} covers \texttt{0101} -- try to turn \texttt{0XXX} into:\\
+    \hskip1em \texttt{0XX\underline{0}},
+    \texttt{0X\underline{1}X} or
+    \texttt{0\underline{0}XX}
+  }
+  \only<2-3>{\vskip-2.75\baselineskip
+    \begin{align*}
+      \{\texttt{0000},~\cancel{\texttt{0011}},~\cancel{\texttt{011X}}\} &~\rightarrow~ \texttt{000\underline{0}} \\
+      \{\cancel{\texttt{0000}},~\texttt{0011},~\texttt{011X}\}          &~\rightarrow~ \texttt{0X\underline{1}X} \\
+      \{\texttt{0000},~\texttt{0011},~\cancel{\texttt{011X}}\}          &~\rightarrow~ \texttt{0\underline{0}XX} \\
+    \end{align*}
+  }
 \end{frame}
 
 \begin{frame}[plain]{}
@@ -217,11 +279,42 @@
 \end{frame}
 
 \begin{frame}{On-chip memory usage}
-  
+  Peak heap usage --
+  \begin{center}
+    \begin{tabular}{l S S}
+      \toprule
+      \textbf{Benchmark} & {\textbf{Total} / \si{\kibi\byte}} & {Table / \si{\kibi\byte}} \\
+      \midrule
+      Locally-connected & 18.4 & 13.3 \\
+      Centroid          & 18.8 & 14.0 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+  \vskip\baselineskip
+
+  If reclaiming memory -- every merge of $\ge10$ entries decreases memory usage
 \end{frame}
 
 \begin{frame}{Timing}
-  
+  Ordered-Covering on SpiNNaker --
+  \begin{center}
+    \begin{tabular}{l S S S}
+      \toprule
+      & & \multicolumn{2}{c}{Exec. time / \si{\second}} \\
+      Model & {Load time / \si{\second}} & {Sufficient} & {Fully} \\
+      \midrule
+      Locally-connected & 3.8 & 13.9 & 25.6 \\
+      Centroid & 3.6 & & 25.6 \\
+      \bottomrule
+    \end{tabular}
+  \end{center}
+
+  \begin{itemize}
+    \item Locally-connected benchmark -- 64.5$\times$ faster on SpiNNaker
+    \item Centroid -- 2.8$\times$ faster
+  \end{itemize}
+
+  As networks scale\ldots
 \end{frame}
 
 \begin{darkframes}
