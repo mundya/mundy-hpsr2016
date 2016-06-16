@@ -339,7 +339,7 @@ In contrast, m-Trie minimization~\parencite{Ahmad2007} has been shown to be capa
 
   Once we have identified that the entry resulting from a merge, $e_m$ (e.g., \mytt{0XXX}), covers an entry lower in the table, $e_c$ (e.g., \mytt{0101}), we attempt to modify the merge to avoid the covering.
   This may be achieved by converting one of the \mytt{X}s in $e_m$ so that it is the opposite of the bit in the same position in $e_c$.
-  In our example we look to remove entries from the merge such that one of the \mytt{X}s in \mytt{0XXX} such that the new entry resulting from the merge, $e_m^\prime$, is \mytt{0\underline{0}XX}, \mytt{0X\underline{1}X} or \mytt{0XX\underline{0}} -- none of which would cover $e_c$ (\mytt{0101}).
+  In our example we look to remove entries from the merge such that the new entry resulting from the merge, $e_m^\prime$, is \mytt{0\underline{0}XX}, \mytt{0X\underline{1}X} or \mytt{0XX\underline{0}} -- none of which would cover $e_c$ (\mytt{0101}).
   
   An \mytt{X} in the entry resulting from a merge may be converted to another value, $v$, by removing from the merge any entries which have either \mytt{X} or $\overline{v}$ in the given bit position.
   In our example, to convert \mytt{0XX\underline{X}} to \mytt{0XX\underline{0}} we remove from the merge any entries with \mytt{X} or \mytt{1} in the rightmost bit position, in this instance we would remove \mytt{001\underline{1}} and \mytt{011\underline{X}} from the merge.
